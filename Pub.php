@@ -121,8 +121,8 @@ class Pub extends ManagerBase
                             $session->set('manager_avatar',$admin_res['avatar']);
                             $session->set('manager_login_time',time());
                             $session->set('manager_type',$admin_res['group_type']);
-                            $session->set('site_title_prefix',$company_name.'_');
-                            $session->set('site_version',$company_version);
+                            $session->set('manager_site_title_prefix',$company_name.'_');
+                            $session->set('manager_site_version',$company_version);
 
                             $logInfo = [
                                 'type'=>'manager',
@@ -134,7 +134,7 @@ class Pub extends ManagerBase
                                 'flag'=>true,
                             ];
 
-                            $this->service->getSession()->set('manager_user_fail',0);
+                            $session->set('manager_user_fail',0);
                             $admin_account->sysLog($req->company_id,$logInfo,'pub/login');
 
                             $bid = $req->company_id;
@@ -223,8 +223,8 @@ class Pub extends ManagerBase
         $session->delete('manager_avatar');
         $session->delete('manager_login_time');
         $session->delete('manager_type');
-        $session->delete('site_title_prefix');
-        $session->delete('site_version');
+        $session->delete('manager_site_title_prefix');
+        $session->delete('manager_site_version');
 
         $bid = $req->company_id;
         $path = [

@@ -43,6 +43,8 @@ class PermissionBase extends ManagerBase
         $sessions['manager_name'] = $session->get('manager_name');
         $sessions['manager_avatar'] = $session->get('manager_avatar');
         $sessions['manager_login_time'] = $session->get('manager_login_time');
+        $sessions['manager_site_title_prefix'] = $session->get('manager_site_title_prefix');
+        $sessions['manager_site_version'] = $session->get('manager_site_version');
 
         $this->sessions = $sessions;
 

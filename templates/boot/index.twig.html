@@ -5,7 +5,7 @@
     <!-- Set render engine for 360 browser -->
     <meta name="renderer" content="webkit">
     <meta charset="UTF-8">
-    <title>{{ site_title_prefix }}{{ site_title }}</title>
+    <title>{{ sessions.manager_site_title_prefix }}{{ site_title }}</title>
     <meta name="description" content="{{ site_desc }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -58,7 +58,7 @@
         <div class="navbar-inner">
             <div class="container-fluid">
                 <a href="#" class="brand"> <small>
-                    {{site_title_prefix}}{{ site_title }}
+                    {{ sessions.manager_site_title_prefix }}{{ site_title }}
                 </small>
                 </a>
                 <div class="pull-left nav_lists">
@@ -76,7 +76,7 @@
                     <li class="light-blue">
                         <a data-toggle="dropdown" href="#" class="dropdown-toggle">
                             {% if sessions.admin_avatar %}
-                                <img class="nav-user-photo" width="30" height="30" src="{{ sessions.admin_avatar }}" alt="11" >
+                                <img class="nav-user-photo" width="30" height="30" src="{{ sessions.manager_avatar }}" alt="11" >
                             {% else %}
                                 <img class="nav-user-photo" width="30" height="30" src="/Public/assets/images/logo-18.png" alt="">
                             {% endif %}
@@ -87,9 +87,7 @@
                         </a>
                         <ul class="user-menu pull-right dropdown-menu dropdown-yellow dropdown-caret dropdown-closer">
 
-                            <li><a href="javascript:openapp('{{ URL("manager",bid~"/"~pl_name,{"mod":"user","act":"userinfo"},"manager") }}','index_userinfo','用户信息');"><i class="fa fa-user"></i> 用户信息 </a></li>
-
-                            <li><a href="javascript:openapp('{{ URL("manager",bid~"/"~pl_name,{"mod":"setting","act":"password"},"manager") }}','index_password','修改密码');"><i class="fa fa-lock"></i> 修改密码</a></li>
+                            <li><a href="javascript:openapp('{{ URL("manager",bid~"/"~pl_name,{"mod":"user","act":"company_userinfo"},"manager") }}','index_userinfo','用户信息');"><i class="fa fa-user"></i> 用户信息 </a></li>
 
                             <li><a href="{{ URL('manager',bid~'/'~pl_name,{'mod':'pub','act':'logout'},'manager') }}"><i class="fa fa-sign-out"></i> 退出 </a></li>
                         </ul>

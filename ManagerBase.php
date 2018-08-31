@@ -37,8 +37,6 @@ class ManagerBase extends Plugins
                 if ($config_vals && isset($config_vals['config'])) {
                     $res = ng_mysql_json_safe_decode($config_vals['config']);
                     $this->global_view_var = $res;
-
-
                     $this->service->getCache()->set($cache_key,$this->global_view_var,3600);
                 }
             }
@@ -125,6 +123,18 @@ class ManagerBase extends Plugins
                 ];
                 $navs[$key]['url'] = urlGen($req,$path,$query);
             }
+        } else {
+            $path = [
+                'mark' => 'manager',
+                'bid'  => $req->company_id,
+                'pl_name'=>'manager',
+            ];
+            $query = [
+                'mod'=>'index',
+                'act'=>'index',
+            ];
+            $navs[0]['name'] = '首页';
+            $navs[0]['url'] = urlGen($req,$path,$query);
         }
 
         //获得子菜单
