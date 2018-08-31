@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if company_name %}
+        {{ company_name }}_
+        {% endif %}
+        {{ site_title }}
+    </title>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1,IE=edge" />
+    <meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta name="robots" content="noindex,nofollow">
+    <link href="/assets/manager/public/css/admin_login.css" rel="stylesheet" />
+    <style>
+        #login_btn_wraper{
+            text-align: center;
+        }
+        #login_btn_wraper .tips_success{
+            color:#fff;
+        }
+        #login_btn_wraper .tips_error{
+            color:#DFC05D;
+        }
+        #login_btn_wraper button:focus{outline:none;}
+    </style>
+    <script>
+        if (window.parent !== window.self) {
+            document.write = '';
+            window.parent.location.href = window.self.location.href;
+            setTimeout(function () {
+                document.body.innerHTML = '';
+            }, 0);
+        }
+    </script>
+</head>
+<body>
+<div class="wrap" style="margin-top:80px">
+    <h1 style="display:flex;flex-direction:column;align-items:center;margin-bottom: 5px;">
+        <a>
+            {{ company_name }}_{{ site_title }}</a></h1>
+    <h5 style="display:flex;flex-direction:column;align-items:center;color:#c2ccd1 ;padding-left: 200px;margin-top: 0px;margin-bottom: 5px;">{{ company_version }}</h5>
+    <form method="post" name="login" action="{{ form_url }}" autoComplete="off" class="js-ajax-form">
+        <div class="login">
+            <ul>
+                <li>
+                    <input class="input" id="js-admin-name" name="username" type="text" placeholder="用户名称" title="用户名" value="{{ default_user }}" data-rule-required="true"  data-msg-required=""/>
+                </li>
+                <li>
+                    <input class="input" id="admin_pwd" type="password" name="password" placeholder="密码" title="密码" data-rule-required="true"  data-msg-required=""/>
+                </li>
+                <li class="verifycode-wrapper">
+                    <img class="verify_img" src="{{ vcode_url }}" onclick="this.src='{{ vcode_url }}&time='+Math.random();" style="margin:0 auto;cursor: pointer;" title="点击获取"/>
+                </li>
+                <li>
+                    <input class="input" type="text" name="verify" placeholder="验证码" />
+                </li>
+            </ul>
+            {% if error_code !=0 %}
+            <div>
+                <span style="width: 100%;font-size: 14px;color: red;text-align: center;display: block;margin: 10px 0px;"> {{ error }} </span>
+            </div>
+            {% endif %}
+            {% if admin_user_fail >= 3 %}
+            <div>
+                <span style="width: 100%;font-size: 14px;color: red;text-align: center;display: block;margin: 10px 0px;"> 您还可以参数 {{ allow_try - admin_user_fail }} </span>
+            </div>
+            {% endif %}
+            <div id="login_btn_wraper">
+                <button type="submit" name="submit" class="btn js-ajax-submit" data-loadingmsg="登陆">登陆</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    var GV = {
+        HOST:"/wxapp/",
+        ROOT: "/",
+        WEB_ROOT: "/",
+        JS_ROOT: "/asset/js/"
+    };
+</script>
+<script src="/wxapp/asset/js/wind.js"></script>
+<script src="/wxapp/asset/js/jquery.js"></script>
+<script type="text/javascript" src="/wxapp/asset/js/common.js"></script>
+<script>
+    ;(function(){
+        document.getElementById('js-admin-name').focus();
+    })();
+</script>
+</body>
+</html>
