@@ -55,22 +55,6 @@
                         </td>
                     </tr>
 
-                    <tr>
-                        <th width="80">账号类型</th>
-                        <td>
-                            <input type="radio"  name="post[group_type]"  value="1" {% if admin_account.group_type == 1 %} checked="checked"{% endif %} /> 子账户
-                            &nbsp;&nbsp;
-                            <input type="radio"  name="post[group_type]"  value="0" {% if admin_account.group_type == 0 %} checked="checked"{% endif %}/> 主账户
-                        </td>
-                    </tr>
-                    <tr>
-                        <th width="80">所属域</th>
-                        <td>
-                            <input type="text" style="width: 400px;" name="post[group_id]" required value="{{ admin_account.group_id }}" placeholder="请输入所属域"/>
-                            <span class="form-required">*</span>
-                            <span class="form-required">所属域也称为企业id [3-16位]</span>
-                        </td>
-                    </tr>
 
                     <tr>
                         <th width="80">昵称</th>
@@ -144,6 +128,7 @@
                     </tr>
                 </table>
 
+                {%if is_self != 1 %}
                 <table class="table table-bordered">
                     <blockquote>状态</blockquote>
                     <tr>
@@ -162,6 +147,7 @@
                         </td>
                     </tr>
                 </table>
+                {% endif %}
 
             </div>
             <div class="span3">
