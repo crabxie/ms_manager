@@ -9,6 +9,7 @@
 namespace manager;
 
 use libs\asyncme\RequestHelper;
+use manager\model\HookModel;
 use PHPSQLParser\PHPSQLParser;
 use PHPSQLParser\utils\PHPSQLParserConstants;
 use libs\asyncme\Page as Page;
@@ -29,7 +30,7 @@ class User extends PermissionBase
         ];
         $query = [
             'mod'=>'user',
-            'act'=>'manager'
+            'act'=>'company'
         ];
         $default_frame_url = urlGen($req,$path,$query,true);
 
@@ -45,11 +46,122 @@ class User extends PermissionBase
     }
 
 
-    /**
-     * 运营者
-     */
+    //运营者
 
+
+    /**
+     * @name 运营者子账号
+     * @pri ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
     public function companyAction(RequestHelper $req,array $preData)
+    {
+        $status = true;
+        $mess = '成功';
+
+        $nav_data = $this->nav_default($req,$preData);
+
+        $where =[];
+        $raw = false;
+
+        if ($req->request_method == 'POST') {
+            $formget = $req->post_datas['formget'];
+        } else {
+            $keyword = urldecode($req->query_datas['keyword']);
+            $formget['keyword'] = $keyword;
+        }
+
+        $formget['group_id'] = $req->company_id;
+
+        if ($formget) {
+            if ($formget['group_id'] && !$formget['keyword']) {
+                $raw = false;
+                $where['group_id']=$formget['group_id'];
+                $where['group_type'] = 1;
+            } else if  (isset($formget['group_id']) && $formget['keyword']) {
+                $where[0] = "group_id = ? and ( account like ? or nickname like ? ) and group_type = ?";
+                $where[1] = [$formget['group_id'], '%'.$formget['keyword'].'%','%'.$formget['keyword'].'%','1'];
+                $raw = true;
+            }
+        }
+
+
+        $account_model = new model\AccountModel($this->service);
+        $total = $account_model->companyCount($where,$raw);
+
+        $path = [
+            'mark' => 'manager',
+            'bid'  => $req->company_id,
+            'pl_name'=>'manager',
+        ];
+
+        $pageLink = urlGen($req,$path,[],true);
+        $per_page = 20;
+        $page = $this->page($pageLink,$total,$per_page);
+        $lists = $account_model->companyLists($where,['ctime','desc'],$page->Current_page,$per_page,$raw);
+
+        //ng_func_privilege_check($req->company_id,$this->sessions['admin_uid'],'index');
+
+        $path = [
+            'mark' => 'manager',
+            'bid'  => $req->company_id,
+            'pl_name'=>'manager',
+        ];
+        $query = [
+            'mod'=>'user',
+        ];
+
+        if ($lists) {
+
+            foreach ($lists as $key=>$val) {
+                $operater_url = array_merge($query,['act'=>'company_edit','uid'=>$val['id']]);
+                $lists[$key]['edit_url'] = urlGen($req,$path,$operater_url,true);
+
+                $operater_url = array_merge($query,['act'=>'company_delete','uid'=>$val['id']]);
+                $lists[$key]['delete_url'] = urlGen($req,$path,$operater_url,true);
+
+                if ($lists[$key]['expire_time']) {
+                    if (time()-$lists[$key]['expire_time'] >0 ) {
+                        $lists[$key]['status']=10;
+                    }
+                }
+
+
+
+            }
+            $operater_url = array_merge($query,['act'=>'company_delete']);
+            $operaters_delete_action =  urlGen($req,$path,$operater_url,true);
+        }
+
+        $operater_url = array_merge($query,['act'=>'company_add']);
+        $operaters_add_action =  urlGen($req,$path,$operater_url,true);
+
+        $pagination = $page->show('Admin');
+
+        $data = [
+            'total'=>$total,
+            'lists' => $lists,
+            'add_action_url'=>$operaters_add_action,
+            'delete_action_url'=>$operaters_delete_action,
+            'pagination' => $pagination,
+            'formget'=>$formget,
+
+        ];
+        $data = array_merge($nav_data,$data);
+
+        return $this->render($status,$mess,$data,'template','user/company');
+    }
+
+    /**
+     * @name 子账号列表
+     * @pri ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
+    public function company_listsAction(RequestHelper $req,array $preData)
     {
         $status = true;
         $mess = '成功';
@@ -154,6 +266,13 @@ class User extends PermissionBase
         return $this->render($status,$mess,$data,'template','user/company');
     }
 
+    /**
+     * @name 子账号删除
+     * @pri ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
     public function company_deleteAction(RequestHelper $req,array $preData)
     {
 
@@ -192,6 +311,13 @@ class User extends PermissionBase
         return $this->render($status,$mess,$data);
     }
 
+    /**
+     * @name 子账号添加
+     * @pri ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
     public function company_addAction(RequestHelper $req,array $preData)
     {
         try {
@@ -227,12 +353,18 @@ class User extends PermissionBase
                 'cate_index_url'=>$cate_index_url,
                 'asset_upload_url'=>$asset_upload_url,
             ];
+            $account_model = new model\AccountModel($this->service);
+            $current_count = $account_model->companyCount(['group_id'=>$req->company_id,'group_type'=>1]);
+
+            $hook_model = new HookModel($this->service);
+            $hook_model->assert_max_sub_limit($req->company_id,$current_count);
 
             if($req->request_method == 'POST') {
                 $post = $req->post_datas['post'];
 
                 if ($post) {
-                    $account_model = new model\AccountModel($this->service);
+
+
                     //正常的编辑
                     $map = [];
                     if ($post['account'] && preg_match('/\w{5,16}/is',$post['account'])) {
@@ -248,11 +380,7 @@ class User extends PermissionBase
                         throw new \Exception('账号已经存在');
                     }
 
-                    if ($post['group_id'] && preg_match('/[1-9]\d{2,15}/is',$post['group_id'])) {
-                        $map['group_id'] = $post['group_id'];
-                    } else {
-                        throw new \Exception('域id格式不对。');
-                    }
+
 
                     if ($post['nickname'] && (mb_strlen($post['nickname'],'UTF-8')>=2 && mb_strlen($post['nickname'],'UTF-8')<=10)) {
                         $map['nickname'] = $post['nickname'];
@@ -289,7 +417,7 @@ class User extends PermissionBase
                     if($post['alias']) {
                         $map['alias'] = $post['alias'];
                     }
-                    $map['group_type'] = $post['group_type'];
+
                     $map['status'] = $post['status'];
                     if ($post['expire_time']) {
                         $map['expire_time'] = strtotime($post['expire_time']);
@@ -309,6 +437,8 @@ class User extends PermissionBase
                     ];
                     $map['operation'] = ng_mysql_json_safe_encode($admin_opteration);
 
+                    $map['group_id'] = $req->company_id;
+                    $map['group_type'] = 1;
                     $flag = $account_model->addCompanyAccount($map);
                     if (!$flag) {
                         throw new \Exception('保存错误');
@@ -342,6 +472,13 @@ class User extends PermissionBase
         }
     }
 
+    /**
+     * @name 子账号编辑
+     * @pri ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
     public function company_editAction(RequestHelper $req,array $preData)
     {
         $request_uid = $req->query_datas['uid'];
@@ -423,11 +560,7 @@ class User extends PermissionBase
                             throw new \Exception('账号已经存在');
                         }
 
-                        if ($post['group_id'] && preg_match('/[1-9]\d{2,15}/is',$post['group_id'])) {
-                            $map['group_id'] = $post['group_id'];
-                        } else {
-                            throw new \Exception('域id格式不对。');
-                        }
+
 
                         if ($post['nickname'] && (mb_strlen($post['nickname'],'UTF-8')>=2 && mb_strlen($post['nickname'],'UTF-8')<=10)) {
                             $map['nickname'] = $post['nickname'];
@@ -447,7 +580,7 @@ class User extends PermissionBase
                         }
                         
 
-                        if ($post['status']) {
+                        if (isset($post['status'])) {
                             $map['status'] = $post['status'];
                         }
 
@@ -472,14 +605,15 @@ class User extends PermissionBase
                         if($post['alias']) {
                             $map['alias'] = $post['alias'];
                         }
-                        $map['group_type'] = $post['group_type'];
 
                         $map['avatar'] = $post['avatar'];
                         $map['mtime'] = time();
 
                         $save_where = [
+                            'group_id'=>$req->company_id,
                             'id'=> $post['uid'],
                         ];
+
                         $flag = $account_model->saveCompanyAccount($save_where,$map);
                         if (!$flag) {
                             throw new \Exception('保存错误');
@@ -516,6 +650,13 @@ class User extends PermissionBase
 
     }
 
+    /**
+     * @name 用户编辑
+     * @pri ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
     public function company_userinfoAction(RequestHelper $req,array $preData)
     {
         $sessions = $session = $this->service->getSession();
@@ -572,6 +713,7 @@ class User extends PermissionBase
                     'asset_upload_url'=>$asset_upload_url,
                     'cate_name'=>'运营者',
                     'admin_account'=>$admin_account,
+                    'is_self'=>1,
                 ];
                 $status = true;
                 $mess = '成功';
@@ -598,11 +740,6 @@ class User extends PermissionBase
                             throw new \Exception('账号已经存在');
                         }
 
-                        if ($post['group_id'] && preg_match('/[1-9]\d{2,15}/is',$post['group_id'])) {
-                            $map['group_id'] = $post['group_id'];
-                        } else {
-                            throw new \Exception('域id格式不对。');
-                        }
 
                         if ($post['nickname'] && (mb_strlen($post['nickname'],'UTF-8')>=2 && mb_strlen($post['nickname'],'UTF-8')<=10)) {
                             $map['nickname'] = $post['nickname'];
@@ -647,7 +784,6 @@ class User extends PermissionBase
                         if($post['alias']) {
                             $map['alias'] = $post['alias'];
                         }
-                        $map['group_type'] = $post['group_type'];
 
                         $map['avatar'] = $post['avatar'];
                         $map['mtime'] = time();
@@ -690,11 +826,17 @@ class User extends PermissionBase
         }
     }
 
+
+     //前端用户
+
+
     /**
-     * 前端用户
+     * @name 前端用户列表
+     * @pri ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
      */
-
-
     public function frontend_userAction(RequestHelper $req,array $preData)
     {
         $status = true;
@@ -807,6 +949,13 @@ class User extends PermissionBase
         return $this->render($status,$mess,$data,'template','user/frontend_user');
     }
 
+    /**
+     * @name 前端用户删除
+     * @pri ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
     public function frontend_user_deleteAction(RequestHelper $req,array $preData)
     {
 
@@ -845,6 +994,13 @@ class User extends PermissionBase
         return $this->render($status,$mess,$data);
     }
 
+    /**
+     * @name 前端用户添加
+     * @pri ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
     public function frontend_user_addAction(RequestHelper $req,array $preData)
     {
         try {
@@ -969,6 +1125,13 @@ class User extends PermissionBase
         }
     }
 
+    /**
+     * @name 前端用户编辑
+     * @pri ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
     public function frontend_user_editAction(RequestHelper $req,array $preData)
     {
         $request_uid = $req->query_datas['sys_uid'];
