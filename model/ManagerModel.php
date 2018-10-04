@@ -27,6 +27,9 @@ class ManagerModel
         $this->db = $service->getDb();
         $this->cache = $service->getCache();
         $this->redis = $service->getRedis();
+        if(method_exists($this,'init')) {
+            call_user_func([$this,'init']);
+        }
     }
 
     /**

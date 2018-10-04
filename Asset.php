@@ -20,6 +20,7 @@ class Asset extends PermissionBase
      * @param RequestHelper $req
      * @param array $preData
      * @return ResponeHelper
+     * @priv ask
      */
     public function uploadAction(RequestHelper $req,array $preData)
     {
@@ -99,6 +100,7 @@ class Asset extends PermissionBase
      * @param RequestHelper $req
      * @param array $preData
      * @return ResponeHelper
+     * @priv ask
      */
     public function fileuploadAction(RequestHelper $req,array $preData)
     {

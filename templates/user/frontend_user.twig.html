@@ -20,7 +20,6 @@
 
 {% block frame_content %}
 <form class="well form-search" method="post" action="#">
-    <input type="text" name="formget[company_id]" style="width: 200px;" value="{{ formget.company_id|default('') }}" placeholder="请输大Bid.">
     <input type="text" name="formget[work_id]" style="width: 200px;" value="{{ formget.work_id|default('') }}" placeholder="请输业务id.">
     <input type="text" name="formget[keyword]" style="width: 200px;" value="{{ formget.keyword|default('') }}" placeholder="请输入用户名或者昵称或者uid...">
     <input id="default_search_btn" type="submit" class="btn btn-primary" value="搜索" />
@@ -37,7 +36,6 @@
         <tr>
             <th width="15"><label><input type="checkbox" class="js-check-all" data-direction="x" data-checklist="js-check-x"></label></th>
             <th width="50">UID</th>
-            <th width="50">大Bid</th>
             <th width="50">业务id</th>
             <th width="30">头像</th>
             <th width="120">用户名</th>
@@ -54,7 +52,6 @@
         <tr>
             <td><input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]" value="{{ val.sys_uid }}" title="ID:{{ val.sys_uid }}"></td>
             <td>{{ val.sys_uid }}</td>
-            <td>{{ val.company_id }}</td>
             <td>{{ val.work_id }}</td>
             <td>
                 {% if val.avatar == 'default' %}
@@ -84,7 +81,7 @@
         </tr>
         {% endfor %}
         {% else %}
-        <tr><td colspan="11">暂时没有数据！</td></tr>
+        <tr><td colspan="10">暂时没有数据！</td></tr>
         {% endif %}
         </tbody>
     </table>

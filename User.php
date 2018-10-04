@@ -16,6 +16,13 @@ use libs\asyncme\Page as Page;
 
 class User extends PermissionBase
 {
+    /**
+     * @name 首页
+     * @priv ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
     public function indexAction(RequestHelper $req,array $preData)
     {
         $status = true;
@@ -51,7 +58,7 @@ class User extends PermissionBase
 
     /**
      * @name 运营者子账号
-     * @pri ask
+     * @priv ask
      * @param RequestHelper $req
      * @param array $preData
      * @return \libs\asyncme\ResponeHelper
@@ -156,7 +163,7 @@ class User extends PermissionBase
 
     /**
      * @name 子账号列表
-     * @pri ask
+     * @priv ask
      * @param RequestHelper $req
      * @param array $preData
      * @return \libs\asyncme\ResponeHelper
@@ -268,7 +275,7 @@ class User extends PermissionBase
 
     /**
      * @name 子账号删除
-     * @pri ask
+     * @priv ask
      * @param RequestHelper $req
      * @param array $preData
      * @return \libs\asyncme\ResponeHelper
@@ -313,7 +320,7 @@ class User extends PermissionBase
 
     /**
      * @name 子账号添加
-     * @pri ask
+     * @priv ask
      * @param RequestHelper $req
      * @param array $preData
      * @return \libs\asyncme\ResponeHelper
@@ -474,7 +481,7 @@ class User extends PermissionBase
 
     /**
      * @name 子账号编辑
-     * @pri ask
+     * @priv ask
      * @param RequestHelper $req
      * @param array $preData
      * @return \libs\asyncme\ResponeHelper
@@ -651,8 +658,8 @@ class User extends PermissionBase
     }
 
     /**
-     * @name 用户编辑
-     * @pri ask
+     * @name 修改用户信息
+     * @priv ask
      * @param RequestHelper $req
      * @param array $preData
      * @return \libs\asyncme\ResponeHelper
@@ -832,7 +839,7 @@ class User extends PermissionBase
 
     /**
      * @name 前端用户列表
-     * @pri ask
+     * @priv ask
      * @param RequestHelper $req
      * @param array $preData
      * @return \libs\asyncme\ResponeHelper
@@ -844,14 +851,16 @@ class User extends PermissionBase
 
         $nav_data = $this->nav_default($req,$preData);
 
+        $company_id = $req->company_id;
+
         $where =[];
         $raw = false;
 
         if ($req->request_method == 'POST') {
             $formget = $req->post_datas['formget'];
+            $formget['company_id'] = $company_id;
         } else {
             $keyword = urldecode($req->query_datas['keyword']);
-            $company_id = urldecode($req->query_datas['company_id']);
             $work_id = urldecode($req->query_datas['work_id']);
             $formget['keyword'] = $keyword;
             $formget['company_id'] = $company_id;
@@ -951,7 +960,7 @@ class User extends PermissionBase
 
     /**
      * @name 前端用户删除
-     * @pri ask
+     * @priv ask
      * @param RequestHelper $req
      * @param array $preData
      * @return \libs\asyncme\ResponeHelper
@@ -996,7 +1005,7 @@ class User extends PermissionBase
 
     /**
      * @name 前端用户添加
-     * @pri ask
+     * @priv ask
      * @param RequestHelper $req
      * @param array $preData
      * @return \libs\asyncme\ResponeHelper
@@ -1051,11 +1060,7 @@ class User extends PermissionBase
                         throw new \Exception('用户名不对。');
                     }
 
-                    if ($post['company_id'] && preg_match('/[1-9]\d{2,10}/is',$post['company_id'])) {
-                        $map['company_id'] = $post['company_id'];
-                    } else {
-                        throw new \Exception('大Bid格式不对。');
-                    }
+                    $map['company_id'] = $req->company_id;
 
                     if ($post['work_id'] && preg_match('/\w{8,16}/is',$post['work_id'])) {
                         $map['work_id'] = $post['work_id'];
@@ -1126,8 +1131,8 @@ class User extends PermissionBase
     }
 
     /**
-     * @name 前端用户编辑
-     * @pri ask
+     * @name 前端用户修改
+     * @priv ask
      * @param RequestHelper $req
      * @param array $preData
      * @return \libs\asyncme\ResponeHelper
@@ -1200,11 +1205,7 @@ class User extends PermissionBase
                             throw new \Exception('用户名不对。');
                         }
 
-                        if ($post['company_id'] && preg_match('/[1-9]\d{2,10}/is',$post['company_id'])) {
-                            $map['company_id'] = $post['company_id'];
-                        } else {
-                            throw new \Exception('大Bid格式不对。');
-                        }
+                        $map['company_id'] = $req->company_id;
 
                         if ($post['work_id'] && preg_match('/\w{8,16}/is',$post['work_id'])) {
                             $map['work_id'] = $post['work_id'];

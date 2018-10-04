@@ -85,21 +85,14 @@
                         </td>
                     </tr>
                     {% endif %}
-                    <tr>
-                        <th width="80">大Bid</th>
-                        <td>
-                            <input type="text" style="width: 400px;" name="post[company_id]" required value="{{ obj_rel.company_id }}" placeholder="请输入企业id"/>
-                            <span class="form-required">*</span>
-                            <span class="form-required">企业id [3-16位]</span>
-                        </td>
-                    </tr>
+
 
                     <tr>
                         <th width="80">业务id</th>
                         <td>
                             <input type="text" style="width: 400px;" name="post[work_id]" required value="{{ obj_rel.work_id }}" placeholder="请输入业务id"/>
                             <span class="form-required">*</span>
-                            <span class="form-required">业务id [3-16位]</span>
+                            <span class="form-required">业务id [8-16位]</span>
                         </td>
                     </tr>
 

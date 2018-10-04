@@ -16,19 +16,23 @@ class HookModel extends ManagerModel
 
     protected function get_limit_config($company_id)
     {
-        $map = [
-            'company_id'=>$company_id,
-        ];
-        $res = $this->db->table($this->manage_num_limit_table)->where($map)->first();
-        $res = (array)$res;
-        if($res && $res['config']) {
-            $config = ng_mysql_json_safe_decode($res['config']);
+        $redis_key = 'manage_privs_limit_'.$company_id;
+        $redis = \NGRedis::$instance->getRedis();
+        $config = $redis->get($redis_key);
+        if($config) {
+            $config = ng_mysql_json_safe_decode($config);
             return $config;
         } else {
             throw new \Exception('没有权限创建');
         }
     }
 
+    /**
+     * 判断是否最大的子账号限制
+     * @param $company_id
+     * @param $current_num
+     * @throws \Exception
+     */
     public function assert_max_sub_limit($company_id,$current_num)
     {
         $config = $this->get_limit_config($company_id);
@@ -41,6 +45,23 @@ class HookModel extends ManagerModel
         }
     }
 
+    /**
+     * 判断是否最大的业务量限制
+     * @param $company_id
+     * @param $current_num
+     * @throws \Exception
+     */
+    public function assert_max_work_limit($company_id,$current_num)
+    {
+        $config = $this->get_limit_config($company_id);
+        if (isset($config['max_work_count']) && $config['max_work_count']!=0) {
+            if ($config['max_work_count'] <= $current_num) {
+                throw new \Exception('已经到达最大限制');
+            }
+        } else {
+            throw new \Exception('没有权限创建');
+        }
+    }
 
 
 

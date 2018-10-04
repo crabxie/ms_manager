@@ -11,6 +11,7 @@ namespace manager;
 use libs\asyncme\Plugins as Plugins;
 use libs\asyncme\RequestHelper as RequestHelper;
 use libs\asyncme\ResponeHelper as ResponeHelper;
+use manager\model\ManageMenuModel;
 use \Slim\Http\UploadedFile;
 
 class PermissionBase extends ManagerBase
@@ -35,6 +36,7 @@ class PermissionBase extends ManagerBase
         $url = urlGen($req,$path,$query);
         $time = 0;
         $mess = '';
+        $error_code = -1;
 
         $session = $this->service->getSession();
 
@@ -49,9 +51,19 @@ class PermissionBase extends ManagerBase
         $this->sessions = $sessions;
 
         $status = $session->get('manager_user') ? true : false;
+
+        $model = new model\ManageMenuModel($this->service);
+        $func_right = $model->assetPrivRight($req);
+        if (!$func_right) {
+            $status = false;
+            $mess = '没有权限';
+            $error_code = "-2";
+        }
+
         return [
             'status'=>$status,
             'mess'=>$mess,
+            'error_code'=>$error_code,
             'url'=>$url,
             'time'=>$time,
         ];

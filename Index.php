@@ -13,6 +13,12 @@ use libs\asyncme\RequestHelper;
 
 class Index extends PermissionBase
 {
+    /**
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return mixed
+     * @priv allow
+     */
     public function infoAction(RequestHelper $req,array $preData)
     {
         $plugin_req = $req;
@@ -23,6 +29,12 @@ class Index extends PermissionBase
         return $plugin_reponse;
     }
 
+    /**
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     * @priv allow
+     */
     public function tAction(RequestHelper $req,array $preData)
     {
         $status = true;
@@ -35,6 +47,12 @@ class Index extends PermissionBase
         return $this->render($status,$mess,$data);
     }
 
+    /**
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     * @priv allow
+     */
     public function indexAction(RequestHelper $req,array $preData)
     {
         $status = true;
@@ -54,7 +72,12 @@ class Index extends PermissionBase
         return $this->render($status,$mess,$data,'template','Index/index');
     }
 
-
+    /**
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return mixed
+     * @priv allow
+     */
     public function codeAction(RequestHelper $req,array $preData)
     {
         $plugin_req = $req;
@@ -65,9 +88,14 @@ class Index extends PermissionBase
         return $plugin_reponse;
     }
 
+    /**
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     * @priv allow
+     */
     public function urlAction(RequestHelper $req,array $preData)
     {
-
 
         $path = [
             'mark' => 'plugin',
@@ -85,5 +113,22 @@ class Index extends PermissionBase
             'url' => $url,
         ];
         return $this->render($status,$mess,$data);
+    }
+
+    /**
+     * @name 仪表盘
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     * @priv ask
+     */
+    public function dashboardAction(RequestHelper $req,array $preData)
+    {
+        $status = true;
+        $mess = '成功';
+        $data = [
+
+        ];
+        return $this->render($status,$mess,$data,'template','empty');
     }
 }

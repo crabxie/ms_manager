@@ -44,7 +44,19 @@ class ManagerBase extends Plugins
                 $auth_reponse = $this->auth();
                 if ($auth_reponse['status'] == false) {
                     //欠缺时间部分
-                    $this->redirect($auth_reponse['url']);
+                    if ($auth_reponse['error_code']==-1) {
+                        $this->redirect($auth_reponse['url']);
+                    } else if ($auth_reponse['error_code']==-2) {
+                        unset($auth_reponse['url']);
+
+                        if(isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && strtolower($_SERVER["HTTP_X_REQUESTED_WITH"])=="xmlhttprequest"){
+                            echo json_encode($auth_reponse);
+                        } else {
+                            echo '没有权限';
+                        }
+                        die();
+                    }
+
                 }
 
             }
@@ -94,6 +106,7 @@ class ManagerBase extends Plugins
 
     public function nav_default(RequestHelper $req,array $preData)
     {
+
         $model = new model\ManageMenuModel($this->service);
         $navs = $model->getNav();
 
