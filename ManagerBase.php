@@ -202,26 +202,40 @@ class ManagerBase extends Plugins
      * 上传设置
      * @return array
      */
-    protected function upload_setting()
+    protected function upload_setting($c='')
     {
-        $upload_setting = array(
-            'image' => array(
-                'upload_max_filesize' => '10240',//单位KB
-                'extensions' => 'jpg,jpeg,png,gif,bmp4'
-            ),
-            'video' => array(
-                'upload_max_filesize' => '10240',
-                'extensions' => 'mp4,avi,wmv,rm,rmvb,mkv'
-            ),
-            'audio' => array(
-                'upload_max_filesize' => '10240',
-                'extensions' => 'mp3,wma,wav'
-            ),
-            'file' => array(
-                'upload_max_filesize' => '10240',
-                'extensions' => 'txt,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar'
-            )
-        );
+        $model = new model\ConfigModel($this->service);
+        $config_vals = $model->getConfigInfo(['name'=>'manager_upload_setting']);
+
+        if (!$config_vals || !$config_vals['config']) {
+            throw new \Exception('请设置 manager_upload_setting ');
+        }
+        $config_vals['config'] = ng_mysql_json_safe_decode($config_vals['config']);
+
+        $upload_setting = [];
+        if ($config_vals['config']) {
+            $c_all = [];
+            $max_fileSize = 0;
+            foreach ($config_vals['config'] as $key=>$val) {
+                if ($val) {
+                    list($fileSize,$fileExt) = explode('|',$val);
+                    $upload_setting[$key] = [
+                        'upload_max_filesize' => $fileSize,//单位KB
+                        'extensions' => $fileExt
+                    ];
+                    $c_all[] = $fileExt;
+                    $max_fileSize = $max_fileSize>$fileSize ? $max_fileSize : $fileSize;
+                }
+            }
+            if ($c=='*') {
+                $upload_setting[$c] = [
+                    'upload_max_filesize'=>$max_fileSize,
+                    'extensions'=>implode(',',$c_all),
+                ];
+                unset($c_all);
+            }
+        }
+
         foreach ($upload_setting as $setting){
             $extensions=explode(',', trim($setting['extensions']));
             if(!empty($extensions)){
