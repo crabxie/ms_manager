@@ -627,23 +627,28 @@ class Material extends PermissionBase
         return $this->render($status,$mess,$data,'template','material/material_recycle');
     }
 
-
     /**
-     * @name 图标管理
-     * @priv ask
+     * @name 列目录信息
+     * @priv allow
      * @param RequestHelper $req
      * @param array $preData
-     * @return \libs\asyncme\ResponeHelper
+     * @param $type
+     * @return array
      */
-    public function iconAction(RequestHelper $req,array $preData)
+    protected function lists_dir(RequestHelper $req,array $preData,$type='icon')
     {
-        try {
-            $cate = $req->query_datas['cate'];
-            $cate = is_numeric($cate) ? $cate : 0;
 
-            $default_path = "./data/sys/icon";
-            if (is_dir($default_path))
-            {
+        $res = [];
+
+        $cate = $req->query_datas['cate'];
+        $cate = is_numeric($cate) ? $cate : 0;
+
+        $default_paths = ["./data/sys/".$type,"./data/manager/".$type];
+
+        $dir_exist = false;
+        foreach ($default_paths as $default_path) {
+            if (is_dir($default_path)) {
+                $dir_exist = $dir_exist||is_dir($default_path);
                 $icon_cates = [];
                 $path = [
                     'mark' => 'manager',
@@ -666,17 +671,23 @@ class Material extends PermissionBase
                     $url = urlGen($req,$path,$query,true);
                     $icon_cates[$index] = [
                         'name'=>$row,
+                        'path'=>$default_path,
                         'icon_url'=>$url,
                         'selected'=>$selected,
                     ];
                     $index++;
                 }
                 closedir($fp_d);
-
             }
+        }
 
+
+        if ($dir_exist) {
             $default_cate = $icon_cates[$cate]['name'];
-            $default_cate_path = $default_path.'/'.$default_cate;
+            if (!$default_cate) {
+                throw new \Exception('目录为空');
+            }
+            $default_cate_path = $icon_cates[$cate]['path'].'/'.$default_cate;
 
             $icon_file = [];
             if (is_dir($default_cate_path))
@@ -696,10 +707,38 @@ class Material extends PermissionBase
                 closedir($fp_d);
             }
 
+            $res['default_cate'] = $default_cate;
+            $res['icon_cates'] = $icon_cates;
+            $res['lists'] = $icon_file;
+        } else {
+            throw new \Exception('目录不存在');
+        }
+
+
+
+        return $res;
+
+    }
+
+    /**
+     * @name 图标管理
+     * @priv ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
+    public function iconAction(RequestHelper $req,array $preData)
+    {
+        try {
+
+            $res = $this->lists_dir($req,$preData,'icon');
+
+            $default_cate = $res['default_cate'];
+            $icon_cates = $res['icon_cates'];
+            $icon_file = $res['lists'];
         }catch(\Exception $e) {
             $error = $e->getMessage();
         }
-
         if (!$error) {
             $status = true;
             $mess = '成功';
@@ -717,6 +756,44 @@ class Material extends PermissionBase
         }
 
         return $this->render($status,$mess,$data,'template','material/material_icon');
+    }
+
+    /**
+     * @name 动图管理
+     * @priv ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
+     */
+    public function gifAction(RequestHelper $req,array $preData)
+    {
+        try {
+
+            $res = $this->lists_dir($req,$preData,'gif');
+
+            $default_cate = $res['default_cate'];
+            $icon_cates = $res['icon_cates'];
+            $icon_file = $res['lists'];
+        }catch(\Exception $e) {
+            $error = $e->getMessage();
+        }
+        if (!$error) {
+            $status = true;
+            $mess = '成功';
+            $data = [
+                'info'=>$mess,
+                'status'=>$status,
+                'default_cate'=>$default_cate,
+                'icon_cates'=>$icon_cates,
+                'lists'=>$icon_file
+            ];
+        } else {
+            $status = false;
+            $mess = $error;
+            $data = [];
+        }
+
+        return $this->render($status,$mess,$data,'template','material/material_gif');
     }
 
 }

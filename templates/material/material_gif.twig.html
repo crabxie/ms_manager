@@ -1,0 +1,62 @@
+{% extends 'boot/frame.twig.html' %}
+
+{% block frame_head_script %}
+<style type="text/css">
+    #container .info_header {display: block; overflow: hidden;overflow: hidden;padding: 10px;}
+    #container .info_base {display: block;overflow: hidden;}
+    #container .info_base .info{ margin: 0 20px;overflow: hidden; border-right: 1px dashed #ccc; padding: 0 20px;}
+    #container .block_header {font-weight: bold;}
+    #container .line {clear:both;margin:10px 0; }
+    #container .info_desc {padding: 10px;}
+    #container .indent_content {text-indent: 25px;}
+    #container .info_preview{width: 100%;background: #eee;border: 1px solid #ccc;overflow: hidden;height: 300px;}
+    #container li {list-style-type:none;float: none;width: auto; height:auto;padding: 10px;margin: 10px 0px;border: 0px;}
+    #container .wrap {padding: 0px 20px;}
+    #container .table {margin: 10px 0px;}
+    .table_contents {width: 100%;height: auto;  overflow: hidden;}
+    .table_item{height: auto;padding: 5px;overflow: hidden;display: block;}
+    #img_container{width: 100%; overflow: hidden;}
+    #img_container .img_box {float: left;margin: 10px;width: 130px; height:150px;border: 1px dashed #ccc;overflow: hidden;}
+    #img_container .img_box img{display: block; margin:5px auto; max-width:128px;height: auto;}
+    #img_container .img_box .img_name{word-break: break-all;font-size: 12px;text-align: center;margin: 5px;}
+</style>
+
+{% endblock %}
+
+{% block frame_content %}
+
+<div class="wrap js-check-wrap">
+
+    <div class="table-actions" style="margin-top:10px ">
+        {% if icon_cates %}
+        {% for key,val in icon_cates %}
+        <a class="btn {%if val.selected!=1%}btn-info{%endif%} btn-small" href="{{val.icon_url}}" >{{val.name}}</a>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    {% if lists %}
+    <div id="img_container">
+        {% for key,val in lists %}
+        <div class="img_box">
+            <img src="{{val.path|prefixWith('/wxapp/data/','default')~'/'~val.name}}" />
+            <div class="img_name">{{val.name}}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div>暂时没有数据！</div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
+{% block frame_footer %}
+<script type="application/javascript">
+    $(function(){
+
+    });
+</script>
+
+{% endblock %}
