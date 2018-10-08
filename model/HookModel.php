@@ -13,7 +13,12 @@ class HookModel extends ManagerModel
 {
     protected $manage_num_limit_table = 'manage_num_limit';
 
-
+    /**
+     * @name 获取配置文件
+     * @param $company_id
+     * @return mixed
+     * @throws \Exception
+     */
     protected function get_limit_config($company_id)
     {
         $redis_key = 'manage_privs_limit_'.$company_id;
@@ -28,7 +33,7 @@ class HookModel extends ManagerModel
     }
 
     /**
-     * 判断是否最大的子账号限制
+     * @name 判断是否最大的子账号限制
      * @param $company_id
      * @param $current_num
      * @throws \Exception
@@ -46,7 +51,7 @@ class HookModel extends ManagerModel
     }
 
     /**
-     * 判断是否最大的业务量限制
+     * @name 判断是否最大的业务量限制
      * @param $company_id
      * @param $current_num
      * @throws \Exception
@@ -60,6 +65,22 @@ class HookModel extends ManagerModel
             }
         } else {
             throw new \Exception('没有权限创建');
+        }
+    }
+
+    /**
+     * @name 获取最多的业务数
+     * @param $company_id
+     * @return int
+     * @throws \Exception
+     */
+    public function get_max_work_limit($company_id)
+    {
+        $config = $this->get_limit_config($company_id);
+        if (isset($config['max_work_count'])) {
+            return $config['max_work_count'];
+        } else {
+            return 0;
         }
     }
 

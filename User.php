@@ -363,7 +363,7 @@ class User extends PermissionBase
             $account_model = new model\AccountModel($this->service);
             $current_count = $account_model->companyCount(['group_id'=>$req->company_id,'group_type'=>1]);
 
-            $hook_model = new HookModel($this->service);
+            $hook_model = new model\HookModel($this->service);
             $hook_model->assert_max_sub_limit($req->company_id,$current_count);
 
             if($req->request_method == 'POST') {
@@ -528,7 +528,7 @@ class User extends PermissionBase
                 } else {
                     $admin_account['expire_time'] = date('Y-m-d',$admin_account['expire_time']);
                 }
-                if (!$admin_account['desc']) {
+                if ($admin_account['desc']) {
                     $admin_account['desc'] = htmlspecialchars_decode($admin_account['desc']);
                 }
 

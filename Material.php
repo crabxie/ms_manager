@@ -114,6 +114,9 @@ class Material extends PermissionBase
         if ($lists) {
 
             foreach ($lists as $key=>$val) {
+                if ($lists[$key]['desc']) {
+                    $lists[$key]['desc'] = htmlspecialchars_decode($lists[$key]['desc']);
+                }
                 $operater_url = array_merge($query,['act'=>'material_edit','asset_id'=>$val['asset_id']]);
                 $lists[$key]['edit_url'] = urlGen($req,$path,$operater_url,true);
 
@@ -131,6 +134,7 @@ class Material extends PermissionBase
                 $cate_id_name = $this->material_cates($cate_id+1);
 
                 $lists[$key]['cate_name'] = $cate_id_name;
+
 
             }
             $operater_url = array_merge($query,['act'=>'material_remove']);
@@ -327,8 +331,7 @@ class Material extends PermissionBase
                 if (!$name) {
                     throw new \Exception('名称不为空');
                 }
-                //@waring 存在安全问题，待处理
-                $desc = $posts['desc'];
+                $desc = htmlspecialchars($posts['desc']);
 
                 $map = [
                     'name'=>$name,
