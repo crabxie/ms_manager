@@ -1,0 +1,146 @@
+{% extends 'boot/frame.twig.html' %}
+
+
+{% block frame_global_style %}
+<style type="text/css">
+    #container .conteiner_wrap {padding:10px;}
+
+    .pic-list li {  margin-bottom: 5px;  }
+    .color-box { float:left;width:30px; height:30px;margin:5px;border: 1px solid #c2ccd1;}
+    .item_attr{float: left;margin-right: 5px;margin-top: 10px;width: 36px;height: 18px;line-height: 18px;}
+    .item_attr_input{width: 36px;float: left;margin: 5px 5px 5px 0px;height: 30px;padding: 4px 5px !important;}
+    .item_prefix_input{width: 96px;float: left;margin: 5px 5px 5px 0px;height: 30px;padding: 4px 5px !important;}
+    #smeta_prefix_select{width: 96px !important;margin-top:5px;}
+    .table-bordered th{font-weight: 200;}
+
+    .form-required {margin-left: 5px;}
+</style>
+{% endblock %}
+
+{% block frame_head_script %}
+<script type="application/javascript">
+    GV = GV ? GV : {};
+    GV.UPLOAD_HANDLE = '{{ asset_upload_url }}';
+    var _extram_data = {
+        admin_uid : "{{ admin_uid }}"
+    }
+    var app_extra_params='sys';
+</script>
+{% endblock %}
+
+{% block frame_content %}
+<div class="conteiner_wrap js-check-wrap">
+    <ul class="nav nav-tabs">
+        <li><a href="{{ cate_index_url|default('#') }}">{{ cate_name }}</a></li>
+        <li class="active"><a>
+            {%if op=='add' %} 新增 {% else %} 补充资料 {% endif %}
+        </a></li>
+    </ul>
+
+    {% if error %}
+    {% include 'error_box.twig.html' %}
+    {% else %}
+
+    <form action="" method="post" class="form-horizontal js-ajax-form" enctype="multipart/form-data">
+        <div class="row-fluid">
+            <div class="span9">
+                <table class="table table-bordered">
+
+
+                    <tr>
+                        <th width="80">文件名</th>
+                        <td>
+                            <input type="text" style="width: 400px;" name="post[name]" required value="{{ info.name }}" placeholder="请输入文件名"/>
+                            <span class="form-required">*</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th width="80">描述</th>
+                        <td>
+                            <input type="text" style="width: 400px;" name="post[desc]"  value="{{ info.desc }}" placeholder=""/>
+                        </td>
+                    </tr>
+                </table>
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="80">文件id</th>
+                        <td>
+                            {{ info.asset_id }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th width="80">文件类型</th>
+                        <td>
+                            {{ info.filetype }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th width="80">文件大小</th>
+                        <td>
+                            {{ info.filesize }}
+                        </td>
+                    </tr>
+                    {%if info.smeta %}
+                    <tr>
+                        <th width="80">meta</th>
+                        <td>
+                            {% for key,val in info.smeta %}
+                            {{key}} : {{val}}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {%endif%}
+
+                </table>
+
+
+
+
+            </div>
+            <div class="span3">
+                <table class="table table-bordered">
+                    <tr>
+                        <td><b>缩略图</b></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div style="text-align: center;">
+                                {% if not info.thumb %}
+                                <img src="/wxapp/asset/simpleboot/images/default-thumbnail.png" id="thumb-preview" width="135" style="cursor: hand"/>
+                                {% else %}
+                                <img src="{{info.thumb|prefixWith('/wxapp/data/','default')}}" id="thumb-preview" width="135" style="cursor: hand" onerror="this.onerror='';src='/wxapp/asset/simpleboot/images/default-thumbnail.png'"/>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {%if op !='add' %}
+                    <tr>
+                        <td>创建时间 ： {{ info.ctime|date("Y-m-d H:i:s")}}</td>
+                    </tr>
+
+                    <tr>
+                        <td>修改时间 ： {{ info.mtime|date("Y-m-d H:i:s")}}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+        <div class="form-actions">
+            <input type="hidden" name="post[asset_id]" value="{{ asset_id }}">
+            <button class="btn btn-primary js-ajax-submit" type="submit">提交</button>
+            <a class="btn" href="{{ cate_index_url|default('#') }}">返回</a>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+{% endblock %}
+{% block frame_footer %}
+<script type="application/javascript">
+    $(function(){
+
+    });
+</script>
+
+{% endblock %}
