@@ -126,9 +126,64 @@ class Index extends PermissionBase
     {
         $status = true;
         $mess = '成功';
+        $work_model = new model\WorkModel($this->service);
+        $frontend_model = new model\FontendUserModel($this->service);
+        $material_model = new model\AssetsModel($this->service);
+        $hook_model = new  model\HookModel($this->service);
+
+        $where = [
+            'company_id'=>$req->company_id,
+        ];
+        $total_work_count = $work_model->worksCount($where);
+        $frontend_user_count = $frontend_model->userCount($where);
+        $material_count = $material_model->assetsCount($where);
+        $max_work_count = $hook_model->get_max_work_limit($where['company_id']);
+
+
+        $byme_where  = array_merge($where,['account_id'=>$this->sessions['manager_uid']]);
+        $total_work_byme_count = $work_model->worksCount($byme_where);
+
+        $last_24hour_time = strtotime('-1 day',time());
+
+        $today_where = [];
+        $today_where[0] = "company_id = ?  and ctime > ? ";
+        $today_where[1] = [$req->company_id, $last_24hour_time];
+        $frontend_user_today_count = $frontend_model->userCount($today_where,true);
+        $material_today_count = $material_model->assetsCount($today_where,true);
+
+        $lists = [
+            '业务'=>[
+                ['name'=>'业务总数','value'=>$total_work_count],
+                ['name'=>'我创建的业务','value'=>$total_work_byme_count],
+                ['name'=>'允许创建业务数','value'=>$max_work_count],
+            ],
+            '应用'=>[
+                ['name'=>'应用总数','value'=>0],
+            ],
+            '用户'=>[
+                ['name'=>'用户总数','value'=>$frontend_user_count],
+                ['name'=>'进入新增用户数','value'=>$frontend_user_today_count],
+            ],
+            '素材'=>[
+                ['name'=>'素材总数','value'=>$material_count],
+                ['name'=>'今日新增素材数','value'=>$material_today_count],
+            ],
+            '插件'=>[
+                ['name'=>'插件总数','value'=>0],
+            ],
+            'PV/UV'=>[
+                ['name'=>'总PV','value'=>0],
+                ['name'=>'总UV','value'=>0],
+                ['name'=>'今日PV','value'=>0],
+                ['name'=>'今日UV','value'=>0],
+            ],
+        ];
+
+
         $data = [
+            'lists'=>$lists,
 
         ];
-        return $this->render($status,$mess,$data,'template','empty');
+        return $this->render($status,$mess,$data,'template','Index/dashboard');
     }
 }
