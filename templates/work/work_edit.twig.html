@@ -1,0 +1,146 @@
+{% extends 'boot/frame.twig.html' %}
+
+
+{% block frame_global_style %}
+<style type="text/css">
+    #container .conteiner_wrap {padding:10px;}
+
+    .pic-list li {  margin-bottom: 5px;  }
+    .color-box { float:left;width:30px; height:30px;margin:5px;border: 1px solid #c2ccd1;}
+    .item_attr{float: left;margin-right: 5px;margin-top: 10px;width: 36px;height: 18px;line-height: 18px;}
+    .item_attr_input{width: 36px;float: left;margin: 5px 5px 5px 0px;height: 30px;padding: 4px 5px !important;}
+    .item_prefix_input{width: 96px;float: left;margin: 5px 5px 5px 0px;height: 30px;padding: 4px 5px !important;}
+    #smeta_prefix_select{width: 96px !important;margin-top:5px;}
+    .table-bordered th{font-weight: 200;}
+
+    .form-required {margin-left: 5px;}
+</style>
+{% endblock %}
+
+{% block frame_head_script %}
+<script type="application/javascript">
+    GV = GV ? GV : {};
+    GV.UPLOAD_HANDLE = '{{ asset_upload_url }}';
+    var _extram_data = {
+        admin_uid : "{{ admin_uid }}"
+    }
+    var app_extra_params='sys';
+</script>
+{% endblock %}
+
+{% block frame_content %}
+<div class="conteiner_wrap js-check-wrap">
+    <ul class="nav nav-tabs">
+        <li><a href="{{ cate_index_url|default('#') }}">{{ cate_name }}</a></li>
+        <li class="active"><a>
+            {%if op=='add' %} 新增 {% else %} 编辑 {% endif %}
+        </a></li>
+    </ul>
+
+    {% if error %}
+    {% include 'error_box.twig.html' %}
+    {% else %}
+
+    <form action="" method="post" class="form-horizontal js-ajax-form" enctype="multipart/form-data">
+        <div class="row-fluid">
+            <div class="span9">
+                <table class="table table-bordered">
+
+                    <tr>
+                        <th width="80">名称</th>
+                        <td>
+                            <input type="text" style="width: 400px;" name="post[name]" required value="{{ info.name }}" placeholder="请输入名称"/>
+                            <span class="form-required">*</span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th width="80">类型</th>
+                        <td>
+                            <select name="post[type_id]">
+                                {% if cates%}
+                                {% for key,val in cates%}
+                                <option value="{{key}}" {%if info.type_id == key %} selected="selected"{%endif%}>{{val}}</option>
+                                {% endfor %}
+                                {% endif %}
+                            </select>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th width="80">简介</th>
+                        <td>
+                            <textarea name="post[desc]" rows="5" cols="57" style="width: 403px; height: 92px;">{{ info.desc }}</textarea>
+                            <span class="form-required">简介</span>
+                        </td>
+                    </tr>
+                </table>
+
+
+                {%if is_self != 1 %}
+                <table class="table table-bordered">
+                    <blockquote>状态</blockquote>
+                    <tr>
+                        <th width="80">状态</th>
+                        <td>
+                            <input type="radio"  name="post[status]"  value="1" {% if info.status == 1 %} checked="checked"{% endif %} /> 正常
+                            &nbsp;&nbsp;
+                            <input type="radio"  name="post[status]"  value="0" {% if info.status == 0 %} checked="checked"{% endif %}/> 禁用
+                        </td>
+                    </tr>
+
+                </table>
+                {% endif %}
+
+            </div>
+            <div class="span3">
+                <table class="table table-bordered">
+                    <tr>
+                        <td><b>图标</b></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div style="text-align: center;">
+                                <input type="hidden" name="post[thumb]" id="thumb" value="{{info.thumb}}">
+                                <a href="javascript:upload_one_image('图片上传','#thumb',_extram_data,app_extra_params);">
+                                    {% if not info.thumb %}
+                                    <img src="/wxapp/asset/simpleboot/images/default-thumbnail.png" id="thumb-preview" width="135" style="cursor: hand"/>
+                                    {% else %}
+                                    <img src="{{info.thumb|prefixWith('/wxapp/data/','default')}}" id="thumb-preview" width="135" style="cursor: hand" onerror="this.onerror='';src='/wxapp/asset/simpleboot/images/default-thumbnail.png'"/>
+                                    {% endif %}
+
+                                </a>
+                                <input type="button" class="btn btn-small" onclick="$('#thumb-preview').attr('src','/wxapp/asset/simpleboot/images/default-thumbnail.png');$('#thumb').val('');return false;" value="取消图片" style="margin-top: 5px;">
+                            </div>
+                        </td>
+                    </tr>
+                    {%if op !='add' %}
+                    <tr>
+                        <td>创建时间 ： {{ info.ctime|date("Y-m-d H:i:s")}}</td>
+                    </tr>
+
+                    <tr>
+                        <td>修改时间 ： {{ info.mtime|date("Y-m-d H:i:s")}}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+        <div class="form-actions">
+            <input type="hidden" name="post[work_id]" value="{{ info.work_id }}">
+            <button class="btn btn-primary js-ajax-submit" type="submit">提交</button>
+            <a class="btn" href="{{ cate_index_url|default('#') }}">返回</a>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+{% endblock %}
+{% block frame_footer %}
+<script type="application/javascript">
+    $(function(){
+
+    });
+</script>
+
+{% endblock %}

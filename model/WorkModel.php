@@ -75,8 +75,8 @@ class WorkModel extends ManagerModel
      */
     public function addWorks($map)
     {
-        if (!$map['asset_id']) {
-            $map['asset_id'] = substr(md5(getRandomStr().microtime(true)),8,16);
+        if (!$map['work_id']) {
+            $map['work_id'] = substr(md5(getRandomStr().microtime(true)),8,16);
         }
         if (!$map['status']) $map['status'] = 0;
         if (!$map['mtime']) $map['mtime'] = time();
@@ -96,8 +96,8 @@ class WorkModel extends ManagerModel
      */
     public function saveWorks($where=[],$map)
     {
-        if (!$where['asset_id']) {
-            throw new \Exception('保存用户必须有asset_id');
+        if (!$where['work_id']) {
+            throw new \Exception('保存用户必须有work_id');
         }
         if (!$map['mtime']) $map['mtime'] = time();
         $flag = $this->db->table($this->works_table)->where($where)->update($map);
@@ -107,63 +107,39 @@ class WorkModel extends ManagerModel
 
     /**
      * @name 修改状态
-     * @param $asset_id
+     * @param $work_id
      * @param $status
      * @return mixed
      */
-    public function changeStatusWorks($asset_id,$status)
+    public function changeStatusWorks($work_id,$status)
     {
         $map = [
             'status'=>$status,
             'mtime'=>time(),
         ];
-        $where = ['asset_id'=>$asset_id];
+        $where = ['work_id'=>$work_id];
         $flag = $this->db->table($this->works_table)->where($where)->update($map);
         return $flag;
     }
 
     /**
      * @name 审核
-     * @param $asset_id
+     * @param $work_id
      * @param $is_review
      * @return mixed
      */
-    public function changeReviewWorks($asset_id,$is_review)
+    public function changeReviewWorks($work_id,$is_review)
     {
         $map = [
             'is_review'=>$is_review,
             'mtime'=>time(),
         ];
-        $where = ['asset_id'=>$asset_id];
+        $where = ['work_id'=>$work_id];
         $flag = $this->db->table($this->works_table)->where($where)->update($map);
         return $flag;
     }
 
 
-    /**
-     * @name 逻辑删除 默认7天
-     * @param $asset_id
-     * @param $is_recycle
-     * @param int $expire_time
-     * @return mixed
-     */
-    public function removeWorks($asset_id,$is_recycle,$expire_time=3600*24*7)
-    {
-        if ($is_recycle) {
-            $map = [
-                'is_recycle'=>1,
-                'is_recycle_exipre'=>time()+$expire_time,
-            ];
-        } else {
-            $map = [
-                'is_recycle'=>0,
-                'is_recycle_exipre'=>0,
-            ];
-        }
-        $where = ['asset_id'=>$asset_id];
-        $flag = $this->db->table($this->works_table)->where($where)->update($map);
-        return $flag;
-    }
 
     /**
      * @name 物理删除
@@ -177,17 +153,118 @@ class WorkModel extends ManagerModel
 
         $obj = $this->db->table($this->works_table);
         if (!$raw) {
-            if (!$where['asset_id']) {
-                throw new \Exception('保存用户必须有asset_id');
+            if (!$where['work_id']) {
+                throw new \Exception('保存用户必须有work_id');
             }
             $obj=$obj->where($where);
         } else {
-            if (!preg_match('/asset_id/is',$where[0])) {
-                throw new \Exception('保存用户必须有asset_id');
+            if (!preg_match('/work_id/is',$where[0])) {
+                throw new \Exception('保存用户必须有work_id');
             }
             $obj=$obj->whereRaw($where[0],$where[1]);
         }
         return $obj->delete();
     }
 
+    /**
+     * @name 业务管理员列表
+     * @param array $where
+     * @param array $order
+     * @param int $page
+     * @param int $per_page
+     * @param bool $raw
+     * @return mixed
+     */
+    public function worksAdminLists($where=[],$order=[],$page=1,$per_page=20,$raw=false)
+    {
+        return $this->tableLists($this->works_admin_table,$where,$order,$page,$per_page,$raw);
+    }
+
+    /**
+     * @name 业务管理员数量
+     * @param array $where
+     * @param bool $raw
+     * @return mixed
+     */
+    public function worksAdminCount($where=[],$raw=false)
+    {
+        return $this->tableCount($this->works_admin_table,$where,$raw);
+    }
+
+    /**
+     * @name 添加业务管理员
+     * @param $map
+     * @return mixed
+     */
+    public function addWorksAdmin($map)
+    {
+
+        if (!$map['status']) $map['status'] = 1;
+        if (!$map['mtime']) $map['mtime'] = time();
+        if (!$map['ctime']) $map['ctime'] = time();
+
+        $flag = $this->db->table($this->works_admin_table)->insertGetId($map);
+
+        return $flag;
+    }
+
+    /**
+     * @name 保存业务管理员
+     * @param array $where
+     * @param $map
+     * @return mixed
+     * @throws \Exception
+     */
+    public function saveWorksAdmin($where=[],$map)
+    {
+        if (!$where['work_id']) {
+            throw new \Exception('保存用户必须有 work_id');
+        }
+        if (!$map['mtime']) $map['mtime'] = time();
+        $flag = $this->db->table($this->works_admin_table)->where($where)->update($map);
+
+        return $flag;
+    }
+
+    /**
+     * @name 删除业务管理员
+     * @param $where
+     * @param bool $raw
+     * @return mixed
+     * @throws \Exception
+     */
+    public function deleteWorksAdmin($where,$raw=false)
+    {
+
+        $obj = $this->db->table($this->works_admin_table);
+        if (!$raw) {
+            if (!$where['work_id']) {
+                throw new \Exception('保存用户必须有work_id');
+            }
+            $obj=$obj->where($where);
+        } else {
+            if (!preg_match('/work_id/is',$where[0])) {
+                throw new \Exception('保存用户必须有work_id');
+            }
+            $obj=$obj->whereRaw($where[0],$where[1]);
+        }
+        return $obj->delete();
+    }
+
+    /**
+     * @name 修改业务管理员状态
+     * @param $work_id
+     * @param $status
+     * @return mixed
+     */
+    public function changeStatusWorksAdmin($work_id,$status)
+    {
+        $map = [
+            'status'=>$status,
+            'mtime'=>time(),
+        ];
+        $where = ['work_id'=>$work_id];
+        $flag = $this->db->table($this->works_admin_table)->where($where)->update($map);
+        return $flag;
+    }
 }
