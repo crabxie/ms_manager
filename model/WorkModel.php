@@ -14,12 +14,14 @@ use libs\asyncme\Service;
 /**
  * Class AssetsModel
  * @package manager\model
- * @name 资源模型类
+ * @name 业务模型类
  */
-class AssetsModel extends ManagerModel
+class WorkModel extends ManagerModel
 {
 
-    protected $assets_table = 'manage_assets';
+    protected $works_table = 'works';
+
+    protected $works_admin_table = 'works_admin';
 
     /**
      * @name 资料列表
@@ -30,9 +32,9 @@ class AssetsModel extends ManagerModel
      * @param bool $raw
      * @return mixed
      */
-    public function assetsLists($where=[],$order=[],$page=1,$per_page=20,$raw=false)
+    public function worksLists($where=[],$order=[],$page=1,$per_page=20,$raw=false)
     {
-        return $this->tableLists($this->assets_table,$where,$order,$page,$per_page,$raw);
+        return $this->tableLists($this->works_table,$where,$order,$page,$per_page,$raw);
     }
 
     /**
@@ -41,9 +43,9 @@ class AssetsModel extends ManagerModel
      * @param bool $raw
      * @return mixed
      */
-    public function assetsCount($where=[],$raw=false)
+    public function worksCount($where=[],$raw=false)
     {
-        return $this->tableCount($this->assets_table,$where,$raw);
+        return $this->tableCount($this->works_table,$where,$raw);
     }
 
     /**
@@ -51,9 +53,9 @@ class AssetsModel extends ManagerModel
      * @param array $where
      * @return array
      */
-    public function assetsInfo($where=[])
+    public function worksInfo($where=[])
     {
-        $res = $this->db->table($this->assets_table)->where($where)->first();
+        $res = $this->db->table($this->works_table)->where($where)->first();
         if ($res) {
             $res = (array) $res;
             if($res['smeta']) {
@@ -71,7 +73,7 @@ class AssetsModel extends ManagerModel
      * @param $map
      * @return mixed
      */
-    public function addAssets($map)
+    public function addWorks($map)
     {
         if (!$map['asset_id']) {
             $map['asset_id'] = substr(md5(getRandomStr().microtime(true)),8,16);
@@ -80,7 +82,7 @@ class AssetsModel extends ManagerModel
         if (!$map['mtime']) $map['mtime'] = time();
         if (!$map['ctime']) $map['ctime'] = time();
 
-        $flag = $this->db->table($this->assets_table)->insertGetId($map);
+        $flag = $this->db->table($this->works_table)->insertGetId($map);
 
         return $flag;
     }
@@ -92,13 +94,13 @@ class AssetsModel extends ManagerModel
      * @return mixed
      * @throws \Exception
      */
-    public function saveAssets($where=[],$map)
+    public function saveWorks($where=[],$map)
     {
         if (!$where['asset_id']) {
             throw new \Exception('保存用户必须有asset_id');
         }
         if (!$map['mtime']) $map['mtime'] = time();
-        $flag = $this->db->table($this->assets_table)->where($where)->update($map);
+        $flag = $this->db->table($this->works_table)->where($where)->update($map);
 
         return $flag;
     }
@@ -109,14 +111,14 @@ class AssetsModel extends ManagerModel
      * @param $status
      * @return mixed
      */
-    public function changeStatusAssets($asset_id,$status)
+    public function changeStatusWorks($asset_id,$status)
     {
         $map = [
             'status'=>$status,
             'mtime'=>time(),
         ];
         $where = ['asset_id'=>$asset_id];
-        $flag = $this->db->table($this->assets_table)->where($where)->update($map);
+        $flag = $this->db->table($this->works_table)->where($where)->update($map);
         return $flag;
     }
 
@@ -126,14 +128,14 @@ class AssetsModel extends ManagerModel
      * @param $is_review
      * @return mixed
      */
-    public function changeReviewAssets($asset_id,$is_review)
+    public function changeReviewWorks($asset_id,$is_review)
     {
         $map = [
             'is_review'=>$is_review,
             'mtime'=>time(),
         ];
         $where = ['asset_id'=>$asset_id];
-        $flag = $this->db->table($this->assets_table)->where($where)->update($map);
+        $flag = $this->db->table($this->works_table)->where($where)->update($map);
         return $flag;
     }
 
@@ -145,7 +147,7 @@ class AssetsModel extends ManagerModel
      * @param int $expire_time
      * @return mixed
      */
-    public function removeAssets($asset_id,$is_recycle,$expire_time=3600*24*7)
+    public function removeWorks($asset_id,$is_recycle,$expire_time=3600*24*7)
     {
         if ($is_recycle) {
             $map = [
@@ -159,7 +161,7 @@ class AssetsModel extends ManagerModel
             ];
         }
         $where = ['asset_id'=>$asset_id];
-        $flag = $this->db->table($this->assets_table)->where($where)->update($map);
+        $flag = $this->db->table($this->works_table)->where($where)->update($map);
         return $flag;
     }
 
@@ -170,10 +172,10 @@ class AssetsModel extends ManagerModel
      * @return mixed
      * @throws \Exception
      */
-    public function deleteAssets($where,$raw=false)
+    public function deleteWorks($where,$raw=false)
     {
 
-        $obj = $this->db->table($this->assets_table);
+        $obj = $this->db->table($this->works_table);
         if (!$raw) {
             if (!$where['asset_id']) {
                 throw new \Exception('保存用户必须有asset_id');

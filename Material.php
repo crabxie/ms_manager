@@ -65,8 +65,6 @@ class Material extends PermissionBase
 
         $where =[];
         $raw = false;
-        $where =[];
-        $raw = false;
 
         if ($req->request_method == 'POST') {
             $formget = $req->post_datas['formget'];
@@ -82,12 +80,13 @@ class Material extends PermissionBase
                 $raw = false;
                 $where['company_id']=$formget['company_id'];
                 $where['is_recycle']=0;
-            } else if  (isset($formget['group_id']) && $formget['keyword']) {
-                $where[0] = "company_id = ?  and name = ? and is_recycle = ? ";
+            } else if  (isset($formget['company_id']) && $formget['keyword']) {
+                $where[0] = "company_id = ?  and name like ? and is_recycle = ? ";
                 $where[1] = [$formget['company_id'], '%'.$formget['keyword'].'%','0'];
                 $raw = true;
             }
         }
+
 
         $assets_model = new model\AssetsModel($this->service);
         $total = $assets_model->assetsCount($where,$raw);
@@ -124,7 +123,7 @@ class Material extends PermissionBase
                 if ($lists[$key]['is_hot_exipre']) {
                     if (time()-$lists[$key]['is_hot_exipre'] >0 ) {
                         $lists[$key]['is_hot']=0;
-                        $assets_model->saveAssert(['asset_id'=>$val['asset_id']],['is_hot'=>0,'is_hot_exipre'=>0]);
+                        $assets_model->saveAssets(['asset_id'=>$val['asset_id']],['is_hot'=>0,'is_hot_exipre'=>0]);
                     }
                 }
                 $cate_id = $val['cate_id'];
@@ -261,7 +260,7 @@ class Material extends PermissionBase
                                 $map['hash'] = 'not';
                             }
 
-                            $flag1 = $asset_model->addAssert($map);
+                            $flag1 = $asset_model->addAssets($map);
                             $flag = $flag && $flag1;
 
                         }
@@ -321,26 +320,62 @@ class Material extends PermissionBase
             $request_asset_id = $req->query_datas['asset_id'];
             $asset_model = new model\AssetsModel($this->service);
             $where = ['asset_id'=>$request_asset_id,'company_id'=>$req->company_id];
-            $asset_info = $asset_model->assetsInfo($where);
-            if (!$asset_info) {
-                throw new \Exception('资源不存在');
+
+            if ($req->request_method=='POST') {
+                $posts = $req->post_datas['post'];
+                $name = $posts['name'];
+                if (!$name) {
+                    throw new \Exception('名称不为空');
+                }
+                //@waring 存在安全问题，待处理
+                $desc = $posts['desc'];
+
+                $map = [
+                    'name'=>$name,
+                    'desc'=>$desc,
+                    'mtime'=>time(),
+                ];
+                $flag = $asset_model->saveAssets($where,$map);
+                if ($flag) {
+                    $status = true;
+                    $mess = '成功';
+                    $data = [
+                        'info'=>'保存成功',
+                    ];
+                } else {
+                    $status = false;
+                    $mess = '失败';
+                    $data = [
+                        'info'=>'保存失败',
+                    ];
+                }
+            } else {
+
+                $asset_info = $asset_model->assetsInfo($where);
+                if (!$asset_info) {
+                    throw new \Exception('资源不存在');
+                }
+
+
+                if ($asset_info['keyworks']) {
+                    $asset_info['keyworks'] = ng_mysql_json_safe_decode($asset_info['keyworks']);
+                }
+                if ($asset_info['smeta']) {
+                    $asset_info['smeta'] = ng_mysql_json_safe_decode($asset_info['smeta']);
+                }
+
+                $status = true;
+                $mess = '成功';
+                $data = [
+                    'asset_id'=>$request_asset_id,
+                    'info'=>$asset_info,
+                    'cate_name'=>'素材管理',
+                    'cate_index_url'=>$cate_index_url,
+                ];
+
             }
 
-            if ($asset_info['keyworks']) {
-                $asset_info['keyworks'] = ng_mysql_json_safe_decode($asset_info['keyworks']);
-            }
-            if ($asset_info['smeta']) {
-                $asset_info['smeta'] = ng_mysql_json_safe_decode($asset_info['smeta']);
-            }
 
-            $data = [
-                'asset_id'=>$request_asset_id,
-                'info'=>$asset_info,
-                'cate_name'=>'素材管理',
-                'cate_index_url'=>$cate_index_url,
-            ];
-            $status = true;
-            $mess = '成功';
         } catch (\Exception $e) {
             $error = $e->getMessage();
             $data = [
@@ -399,7 +434,7 @@ class Material extends PermissionBase
                     'is_recycle_exipre'=>$is_recycle_exipre,
                     'mtime'=>time(),
                 ];
-                $res = $asset_model->saveAssert($where,$map);
+                $res = $asset_model->saveAssets($where,$map);
                 $flag = $flag && $res;
             }
         }
@@ -443,7 +478,7 @@ class Material extends PermissionBase
                     'is_recycle_exipre'=>0,
                     'mtime'=>time(),
                 ];
-                $res = $asset_model->saveAssert($where,$map);
+                $res = $asset_model->saveAssets($where,$map);
                 $flag = $flag && $res;
             }
         }
@@ -482,7 +517,7 @@ class Material extends PermissionBase
             $asset_model = new model\AssetsModel($this->service);
             foreach ($remove_asset_ids as $remove_id) {
                 $where = ['asset_id'=>$remove_id,'company_id'=>$req->company_id];
-                $res = $asset_model->deleteAssert($where);
+                $res = $asset_model->deleteAssets($where);
                 $flag = $flag && $res;
             }
         }
@@ -643,6 +678,9 @@ class Material extends PermissionBase
         $cate = $req->query_datas['cate'];
         $cate = is_numeric($cate) ? $cate : 0;
 
+        if (!in_array($type,['icon','gif'])) {
+            throw new \Exception('类型不合适');
+        }
         $default_paths = ["./data/sys/".$type,"./data/manager/".$type];
 
         $dir_exist = false;

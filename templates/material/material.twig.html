@@ -112,10 +112,11 @@
                 {% endif %}
             </td>
             <td>
-                {{ val.is_review }}
-                {{ val.is_hot }}
-                {{ val.is_favor }}
-                {{ val.is_lock }}
+                {%if val.is_review %}<div style="color:green">审核</div>{%else%}<div style="color:red">未审核</div>{%endif%}
+                {%if val.is_hot %}<div style="color:orange">常用</div>{%else%}<div style="color:green">普通</div>{%endif%}
+                {%if val.is_favor %}<div style="color:orange">推荐</div>{%else%}<div style="color:green">不推荐</div>{%endif%}
+                {%if val.is_lock %}<div style="color:orange">锁定</div>{%else%}<div style="color:green">不锁定</div>{%endif%}
+
             </td>
             <td>
                 {% if val.status == 1 %}
