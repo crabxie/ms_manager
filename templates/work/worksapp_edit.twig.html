@@ -22,6 +22,7 @@
     GV = GV ? GV : {};
     GV.UPLOAD_HANDLE = '{{ asset_upload_url }}';
     GV.TEMPLATE_SELECT_HANDLE = '{{ template_index_url }}';
+    GV.CONFIG_HANDLE = '{{ config_url }}';
     var _extram_data = {
         admin_uid : "{{ admin_uid }}"
     }
@@ -79,12 +80,14 @@
                     </tr>
 
                     <tr>
-                        <th width="80">简介</th>
+                        <th width="80">配置</th>
                         <td>
-                            <textarea name="post[desc]" rows="5" cols="57" style="width: 403px; height: 92px;">{{ info.desc }}</textarea>
-                            <span class="form-required">简介</span>
+                            <span id="config_name">未设置</span>
+                            <textarea id="config_value" name="post[config_value]" style="display: none"></textarea>
+                            <a href="javascript:openConfigDialog('填写配置','config',_extram_data,app_extra_params,dependencies);">填写配置</a>
                         </td>
                     </tr>
+
                 </table>
 
 
@@ -182,21 +185,57 @@
                 background:"#CCCCCC",
                 opacity:0,
                 ok: function() {
-                    if (typeof callback =='function') {
-                        var iframewindow = this.iframe.contentWindow;
-                        var datas=iframewindow.get_selected_templates();
-                        if(datas){
-                            callback.apply(this, [this, datas,extra_params]);
-                        }else{
-                            return false;
-                        }
-
+                    var iframewindow = this.iframe.contentWindow;
+                    var datas=iframewindow.get_selected_templates();
+                    if(datas){
+                        $('#template_sid').val(datas.sid);
+                        $('#template_name').text(datas.name);
+                    }else{
+                        return false;
                     }
                 },
                 cancel: true
             });
         });
     }
+
+    function openConfigDialog( dialog_title, input_selector, extra_params, app,dependencies )
+    {
+        app = app?app:GV.APP;
+        var params = '&app='+app ;
+
+        if (dependencies) {
+            var dval = $('#'+dependencies).val();
+            if (dval) {
+                params += '&'+dependencies+'='+dval ;
+            }
+        }
+        Wind.use("artDialog","iframeTools",function(){
+            var config_handle = escape2Html(GV.CONFIG_HANDLE)+params;
+
+            art.dialog.open( config_handle, {
+                title: dialog_title,
+                id: new Date().getTime(),
+                width: '650px',
+                height: '420px',
+                lock: true,
+                fixed: true,
+                background:"#CCCCCC",
+                opacity:0,
+                ok: function() {
+                    var iframewindow = this.iframe.contentWindow;
+                    var datas=iframewindow.get_selected_config();
+                    if(datas){
+                        $('#config_value').text(datas.data);
+                    }else{
+                        return false;
+                    }
+                },
+                cancel: true
+            });
+        });
+    }
+
 </script>
 
 {% endblock %}

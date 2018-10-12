@@ -781,6 +781,34 @@ class Work extends PermissionBase
     }
 
     /**
+     * @name 配置对话框
+     * @param RequestHelper $req
+     * @param array $preData
+     */
+    public function work_app_config_dialogAction(RequestHelper $req, array $preData)
+    {
+        $request_type_id = $req->query_datas['type_id'];
+        $where = [
+            'status'=>1,
+        ];
+        if ($request_type_id) {
+            $where['type_id']=$request_type_id;
+        }
+        $raw = false;
+        $config_model = new model\ConfigModel($this->service);
+        $config = $config_model->getConfig('manager_pay_minapp_setting');
+        dump($config);
+
+        $status = true;
+        $mess = '成功';
+        $data = [
+            'info'=>$config,
+        ];
+        return $this->render($status,$mess,$data,'template','work/config_dialog');
+
+
+    }
+    /**
      * @name 模版对话框
      * @param RequestHelper $req
      * @param array $preData
@@ -848,12 +876,12 @@ class Work extends PermissionBase
             ];
             $query = [
                 'mod'=>'work',
-                'act'=>'work'
+                'act'=>'work_app'
             ];
 
             $cate_index_url=  urlGen($req,$path,$query,true);
 
-            //ajax获取模版
+            //对话框获取模版
             $path = [
                 'mark' => 'manager',
                 'bid'  => $req->company_id,
@@ -864,6 +892,20 @@ class Work extends PermissionBase
                 'act'=>'work_app_template_dialog',
             ];
             $template_index_url=  urlGen($req,$path,$query,true);
+
+            //对话框获取配置
+            $path = [
+                'mark' => 'manager',
+                'bid'  => $req->company_id,
+                'pl_name'=>'manager',
+            ];
+            $query = [
+                'mod'=>'work',
+                'act'=>'work_app_config_dialog',
+            ];
+            $config_url=  urlGen($req,$path,$query,true);
+
+
 
             //图片上传地址
             $path = [
@@ -882,12 +924,13 @@ class Work extends PermissionBase
             $status = true;
             $mess = '成功';
             $data = [
-                'cate_name'=>'业务管理',
+                'cate_name'=>'应用管理',
                 'op'=>'add',
                 'cate_index_url'=>$cate_index_url,
                 'cates'=>$cates,
                 'asset_upload_url'=>$asset_upload_url,
                 'template_index_url'=>$template_index_url,
+                'config_url'=>$config_url,
                 'work_id'=>$request_work_id,
             ];
             $work_model = new model\WorksAppModel($this->service);
