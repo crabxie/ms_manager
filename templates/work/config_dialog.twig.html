@@ -37,17 +37,38 @@
 
     <div class="tab-content">
         {% if not error %}
-        <div class="list_content">
-            {% if lists %}
-            {% for key,val in lists %}
-                <div class="list_item">
-                    <div class="item_img_box">
-                        <img src="{{val.preview.icon|prefixWith('/wxapp/data/','default')}}">
-                    </div>
-                    <input class="template_sid" id="template_sid_{{val.id}}" type="radio" name="template_sid" value="{{val.template_sid}}">
-                    <input id="{{val.template_sid}}" type="hidden" value="{{val.name}}" />
-                    <label for="template_sid_{{val.id}}">{{val.name}}</label>
+        <div class="row-fluid">
+            {% if configs %}
+            <blockquote id="block_{{loop.index}}">
+                <div style="height: 24px;">
+                    <span style="float: left">配置</span>
                 </div>
+            </blockquote>
+            {% for key,val in configs %}
+            <table id="tb_{{loop.index}}" class="table table-bordered config_item">
+
+                <tr>
+                    <th>
+                        {% if config_desc %}
+                        {{config_desc[key]}}
+                        {% else %}
+                        {{ key }}
+                        {% endif %}
+                    </th>
+                </tr>
+                <tr>
+                    <td>
+                        {% if config_type and config_type[key]=='file' %}
+                        上传
+                        {% else %}
+                        <input type="text" name="post_c[{{key}}]"  value="{{ val }}" placeholder="请输入" />
+                        {% endif %}
+                    </td>
+                </tr>
+
+
+
+            </table>
             {% endfor %}
             {% endif %}
         </div>

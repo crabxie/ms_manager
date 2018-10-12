@@ -10,6 +10,7 @@ namespace manager;
 
 use libs\asyncme\RequestHelper;
 use manager\model\AccountModel;
+use manager\model\WorksAppModel;
 use PHPSQLParser\PHPSQLParser;
 use PHPSQLParser\utils\PHPSQLParserConstants;
 use libs\asyncme\Page as Page;
@@ -788,6 +789,7 @@ class Work extends PermissionBase
     public function work_app_config_dialogAction(RequestHelper $req, array $preData)
     {
         $request_type_id = $req->query_datas['type_id'];
+        $request_app_sid = $req->query_datas['app_sid'];
         $where = [
             'status'=>1,
         ];
@@ -796,13 +798,51 @@ class Work extends PermissionBase
         }
         $raw = false;
         $config_model = new model\ConfigModel($this->service);
-        $config = $config_model->getConfig('manager_pay_minapp_setting');
-        dump($config);
+        $config_info = $config_model->getConfigInfo(['name'=>'manager_pay_minapp_setting']);
+        if (!$config_info) {
+            throw new \Exception('请配置"manager_pay_minapp_setting"');
+        }
+        $config = ng_mysql_json_safe_decode($config_info['config']);
+        $config_type = [];
+        $config_desc = ng_mysql_json_safe_decode($config_info['config_desc']);
+
+        if($request_app_sid>0) {
+            $workApp_model = new model\WorksAppModel($this->service);
+            $workApp_info = $workApp_model->worksAppInfo(['app_sid'=>$request_app_sid]);
+            if ($workApp_info && $workApp_info['config']) {
+                $current_config = ng_mysql_json_safe_decode($workApp_info['config']);
+                if ($current_config) {
+                    $keys = array_merge(array_keys($config),array_keys($current_config));
+                    foreach ($keys as $key) {
+
+                        $config[$key] = $current_config[$key];
+                    }
+                }
+            }
+        }
+        foreach ($config as $key=>$val) {
+            $config_type[$key] = "text";
+            if(preg_match("/(.+):\/\//is",$key,$rs)) {
+                $old_key=$key;
+
+                $key = preg_replace("/:\/\//is",'@',$key);
+                $config[$key] = $val;
+                $config_type[$key] = $rs[1];
+
+                $config_desc[$key]=$config_desc[$old_key];
+                unset($config[$old_key]);
+                unset($config_type[$old_key]);
+                unset($config_desc[$old_key]);
+            }
+        }
+
 
         $status = true;
         $mess = '成功';
         $data = [
-            'info'=>$config,
+            'configs'=>$config,
+            'config_desc'=>$config_desc,
+            'config_type'=>$config_type,
         ];
         return $this->render($status,$mess,$data,'template','work/config_dialog');
 
