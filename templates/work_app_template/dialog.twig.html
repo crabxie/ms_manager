@@ -1,0 +1,169 @@
+{% extends 'boot/frame.twig.html' %}
+
+
+{% block frame_global_style %}
+<style type="text/css">
+    #container .conteiner_wrap {padding:10px;}
+    .list_content {display: flex;font-size: 12px;color: #0b6cbc;}
+    .list_item{width: 128px;height: 146px;border: 1px solid #ccc;margin: 5px; float: left;overflow: hidden;}
+    .list_item img{width: 100%;margin: 0 auto;overflow: hidden;}
+    .list_item input[type='radio']{float: left;margin-left: 10px;}
+    .list_item label{float: left;margin-left: 10px;}
+</style>
+{% endblock %}
+
+{% block frame_head_script %}
+<script type="application/javascript">
+    function get_selected_templates(){
+
+    }
+</script>
+{% endblock %}
+
+{% block frame_content %}
+<div class="wrap" style="padding: 5px;">
+
+    <div class="tab-content">
+        {% if not error %}
+        <div class="list_content">
+            {% if lists %}
+            {% for key,val in lists %}
+                <div class="list_item">
+                    <img src="{{val.preview.icon|prefixWith('/wxapp/data/','default')}}">
+                    <input id="template_sid_{{val.id}}" type="radio" name="template_sid" value="{{val.template_sid}}">
+                    <label for="template_sid_{{val.id}}">{{val.name}}</label>
+                </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+        {% else %}
+        <span style="color: red">{{ error }}</span>
+        {% endif %}
+        <div class="pagination">
+            {% autoescape false %}
+            {{ pagination }}
+            {% endautoescape %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block frame_footer %}
+<script type="application/javascript">
+    var multi='{{multi}}';
+    var mime_type = escape2Html('{{ mime_type }}');
+    mime_type = eval("("+mime_type+")");
+    var extensions = mime_type.extensions.split(/,/);
+    var mimeTypeRegExp=new RegExp('\\.(' + extensions.join('|') + ')$', 'i');
+
+
+    var upload_url = escape2Html("{{ asset_upload_url }}");
+
+    Wind.use('plupload',function(){
+        var uploader = new plupload.Uploader({
+            runtimes : 'html5,flash,silverlight,html4',
+            browse_button : 'select-files', // you can pass an id...
+            container: document.getElementById('upload_container'), // ... or DOM Element itself
+            url : upload_url,
+            flash_swf_url : '/wxapp/asset/js/plupload/Moxie.swf',
+            silverlight_xap_url : '/wxapp/asset/js/plupload/Moxie.xap',
+            filters : {
+                max_file_size : '{{upload_max_filesize_mb}}mb',
+            },
+            multi_selection:'{{multi}}',
+            multipart_params:{
+                app:'{{app}}'
+            },
+            init: {
+                PostInit: function() {
+                },
+
+                FilesAdded: function(up, files) {
+                    plupload.each(files, function(file) {
+                        var $newfile=$('\
+									<li class="selected">\
+										<div class="selected-icon-wrapper"><i class="fa fa-check-circle"></i></div>\
+										<div class="upload-percent">0%</div>\
+									</li>');
+                        $newfile.attr('id',file.id);
+                        $('#files-container').append($newfile);
+                        $newfile.on('click',function(){
+                            var $this=$(this);
+                            $this.toggleClass('selected');
+                        });
+                    });
+                    uploader.start();
+                },
+
+                UploadProgress: function(up, file) {
+                    $('#'+file.id).find('.upload-percent').text(file.percent+"%");
+                },
+
+                FileUploaded: function(up, file, response) {
+                    var data = JSON.parse(response.response);
+                    if(data.status==1){
+                        if(!multi) {
+                            $('#select-files').css('visibility','hidden');
+                            $('#container').css('visibility','hidden');
+                        }
+                        var respone_file = data.data;
+                        var $file=$('#'+file.id);
+                        $file.addClass('uploaded')
+                                .data('id',file.id)
+                                .data('url',respone_file.url)
+                                .data('preview_url',respone_file.preview_url)
+                                .data('filepath',respone_file.filepath)
+                                .data('size','')
+                                .data('type','')
+                                .data('smata','')
+                                .data('name',respone_file.name);
+                        if(typeof respone_file.size !='undefined') {
+                            $file.data('size',respone_file.size);
+                        }
+                        if(typeof respone_file.type !='undefined') {
+                            $file.data('type',respone_file.type);
+                        }
+                        if(typeof respone_file.smeta != 'undefined') {
+                            $file.data('smeta',JSON.stringify(respone_file.smeta));
+                        }
+
+                        if(respone_file.url.match(/\.(jpeg|gif|jpg|png|bmp|pic)$/gi)){
+                            var $img=$('<img/>');
+                            $img.attr('src',respone_file.url);
+                            $file.find('.upload-percent')
+                                    .html($img);
+                        }else{
+                            $file.find('.upload-percent').attr('title',respone_file.name).text(respone_file.name);
+                        }
+                    }else{
+                        alert(data.message);
+                        $('#'+file.id).remove();
+                    }
+                },
+
+                Error: function(up, err) {
+                }
+            }
+        });
+
+        plupload.addFileFilter('mime_types', function(filters, file, cb) {
+            if (!mimeTypeRegExp.test(file.name)) {
+                this.trigger('Error', {
+                    code : plupload.FILE_EXTENSION_ERROR,
+                    message : plupload.translate('File extension error.'),
+                    file : file
+                });
+                alert("此文件类型不能上传!\n"+file.name);
+                cb(false);
+            } else {
+                cb(true);
+            }
+        });
+
+
+        uploader.init();
+
+    });
+</script>
+
+{% endblock %}

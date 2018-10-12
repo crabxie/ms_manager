@@ -24,7 +24,7 @@ class WorkModel extends ManagerModel
     protected $works_admin_table = 'works_admin';
 
     /**
-     * @name 资料列表
+     * @name 业务列表
      * @param array $where
      * @param array $order
      * @param int $page
@@ -38,7 +38,7 @@ class WorkModel extends ManagerModel
     }
 
     /**
-     * @name 资源数量
+     * @name 业务数量
      * @param array $where
      * @param bool $raw
      * @return mixed
@@ -49,7 +49,7 @@ class WorkModel extends ManagerModel
     }
 
     /**
-     * @name 资源信息
+     * @name 业务信息
      * @param array $where
      * @return array
      */
@@ -69,7 +69,7 @@ class WorkModel extends ManagerModel
     }
 
     /**
-     * @name 添加资源
+     * @name 添加业务
      * @param $map
      * @return mixed
      */
@@ -88,7 +88,7 @@ class WorkModel extends ManagerModel
     }
 
     /**
-     * @name 保存资源
+     * @name 保存业务
      * @param array $where
      * @param $map
      * @return mixed

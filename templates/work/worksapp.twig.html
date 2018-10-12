@@ -1,0 +1,112 @@
+{% extends 'boot/frame.twig.html' %}
+
+{% block frame_head_script %}
+<style type="text/css">
+    #container .info_header {display: block; overflow: hidden;overflow: hidden;padding: 10px;}
+    #container .info_base {display: block;overflow: hidden;}
+    #container .info_base .info{ margin: 0 20px;overflow: hidden; border-right: 1px dashed #ccc; padding: 0 20px;}
+    #container .block_header {font-weight: bold;}
+    #container .line {clear:both;margin:10px 0; }
+    #container .info_desc {padding: 10px;}
+    #container .indent_content {text-indent: 25px;}
+    #container .info_preview{width: 100%;background: #eee;border: 1px solid #ccc;overflow: hidden;height: 300px;}
+    #container li {list-style-type:none;float: none;width: auto; height:auto;padding: 10px;margin: 10px 0px;border: 0px;}
+    #container .wrap {padding: 0px 20px;}
+    #container .table {margin: 10px 0px;}
+    .table_contents {width: 100%;height: auto;  overflow: hidden;}
+    .table_item{height: auto;padding: 5px;overflow: hidden;display: block;}
+</style>
+{% endblock %}
+
+{% block frame_content %}
+<form class="well form-search" method="post" action="#">
+    <input type="text" name="formget[keyword]" style="width: 200px;" value="{{ formget.keyword|default('') }}" placeholder="请输入APP名称...">
+    <input id="default_search_btn" type="submit" class="btn btn-primary" value="搜索" />
+</form>
+<div class="wrap js-check-wrap">
+    <form class="js-ajax-form" action="#" method="post">
+        <div class="table-actions">
+            <a class="btn btn-info btn-small"  href="{{ add_action_url }}" >添加应用</a>
+            <button class="btn btn-primary btn-small js-ajax-submit" type="submit" data-action="{{ delete_action_url }}" data-subcheck="true" data-msg="您确定删除吗？">删除应用</button>
+        </div>
+
+        <table class="table table-hover table-bordered table-list" id="menus-table">
+        <thead>
+        <tr>
+            <th width="15"><label><input type="checkbox" class="js-check-all" data-direction="x" data-checklist="js-check-x"></label></th>
+            <th width="50">ID</th>
+            <th width="50">企业id</th>
+            <th width="50">图标</th>
+            <th width="50">类型</th>
+            <th width="150">名称</th>
+            <th width="150">应用数</th>
+            <th>状态</th>
+            <th>创建时间</th>
+            <th width="180">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% if lists %}
+        {% for key,val in lists %}
+        <tr>
+            <td><input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]" value="{{ val.app_sid }}" title="ID:{{ val.app_sid }}"></td>
+            <td>{{ val.id }}</td>
+            <td>{{ val.company_id }}</td>
+            <td>
+                {% if val.thumb == 'default' %}
+                <img src="{{ val.avatar }}"  onerror="this.onerror='';src='/wxapp/asset/simpleboot/images/avatar/default.jpg'" width="24"/>
+                {% else %}
+                <a href="javascript:parent.image_preview_dialog('{{ val.thumb|prefixWith('/wxapp/data/','default') }}');" title="点击查看大图">
+                    <img src="{{ val.thumb|prefixWith('/wxapp/data/','default') }}"  onerror="this.onerror='';src='/wxapp/asset/simpleboot/images/avatar/default.jpg'" width="24"/>
+                </a>
+                {% endif %}
+
+            </td>
+            <td>{{ val.type_id_name }}</td>
+            <td>{{ val.name }}</td>
+            <td>{{ val.app_count}}</td>
+            <td>
+                {% if val.status == 1 %}
+                <span style="color: green">正常</span>
+                {% elseif val.status == 10 %}
+                <span style="color: red">过期</span>
+                {% else %}
+                <del style="color: red">禁用</del>
+                {% endif %}
+            </td>
+            <td>{{ val.ctime|date('Y-m-d H:i:s') }}</td>
+            <td>
+                <a href="{{val.edit_url}}">编辑</a>
+                | <a href="{{val.app_url}}" >应用 </a>
+                {% if val.is_self %}
+                | <a href="{{val.delete_url}}" class="js-ajax-dialog-btn" data-msg="确定删除吗？">删除</a>
+                | <a href="{{val.add_admin_url}}" >添加管理员({{val.admin_count}})</a>
+                {% endif %}
+                {% if val.is_admin %}
+                | <a href="{{val.add_app_url}}" >添加应用</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr><td colspan="10">暂时没有数据！</td></tr>
+        {% endif %}
+        </tbody>
+    </table>
+    </form>
+    <div class="pagination">
+        {% autoescape false %}
+        {{ pagination }}
+        {% endautoescape %}
+    </div>
+</div>
+
+{% endblock %}
+{% block frame_footer %}
+<script type="application/javascript">
+    $(function(){
+
+    });
+</script>
+
+{% endblock %}

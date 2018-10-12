@@ -623,8 +623,11 @@ class Work extends PermissionBase
     {
         try{
             $nav_data = $this->nav_default($req,$preData);
+
             $where =[];
             $raw = false;
+
+            $request_work_id = $req->query_datas['work_id'];
 
             if ($req->request_method == 'POST') {
                 $formget = $req->post_datas['formget'];
@@ -633,20 +636,23 @@ class Work extends PermissionBase
                 $formget['keyword'] = $keyword;
             }
             $formget['company_id'] = $req->company_id;
+            $formget['work_id'] = $request_work_id;
 
             if ($formget) {
                 if ($formget['company_id'] && !$formget['keyword']) {
                     $raw = false;
                     $where['company_id']=$formget['company_id'];
+                    $where['work_id']=$formget['work_id'];
+
                 } else if  (isset($formget['company_id']) && $formget['keyword']) {
-                    $where[0] = "company_id = ?  and name = ? ";
-                    $where[1] = [$formget['company_id'], '%'.$formget['keyword'].'%'];
+                    $where[0] = "company_id = ?  and name like ? and work_id = ? ";
+                    $where[1] = [$formget['company_id'], '%'.$formget['keyword'].'%',$formget['work_id']];
                     $raw = true;
                 }
             }
 
-            $works_model = new model\WorkModel($this->service);
-            $total = $works_model->worksCount($where,$raw);
+            $worksApp_model = new model\WorksAppModel($this->service);
+            $total = $worksApp_model->worksAppCount($where,$raw);
             $path = [
                 'mark' => 'manager',
                 'bid'  => $req->company_id,
@@ -656,7 +662,7 @@ class Work extends PermissionBase
             $pageLink = urlGen($req,$path,[],true);
             $per_page = 20;
             $page = $this->page($pageLink,$total,$per_page);
-            $lists = $works_model->worksLists($where,['ctime','desc'],$page->Current_page,$per_page,$raw);
+            $lists = $worksApp_model->worksAppLists($where,['ctime','desc'],$page->Current_page,$per_page,$raw);
 
             $path = [
                 'mark' => 'manager',
@@ -666,52 +672,37 @@ class Work extends PermissionBase
             $query = [
                 'mod'=>'work',
             ];
+
             if ($lists) {
-
                 foreach ($lists as $key=>$val) {
-
-                    $lists[$key]['type_id_name'] = $this->work_cates($val['type_id']+1);
-
+                    $lists[$key]['type_id_name'] = $this->works_app_cates($val['type_id']+1);
                     if($val['config']) {
                         $config = ng_mysql_json_safe_decode($val['config']);
                         if (isset($config['thumb'])) {
                             $lists[$key]['thumb'] =$config['thumb'];
                         }
                     }
-                    $operater_url = array_merge($query,['act'=>'work_edit','work_id'=>$val['work_id']]);
+                    $operater_url = array_merge($query,['act'=>'work_app_edit','app_sid'=>$val['app_sid'],'work_id'=>$val['work_id']]);
                     $lists[$key]['edit_url'] = urlGen($req,$path,$operater_url,true);
 
-                    $operater_url = array_merge($query,['act'=>'work_delete','work_id'=>$val['work_id']]);
+                    $operater_url = array_merge($query,['act'=>'work_app_delete','app_sid'=>$val['app_sid'],'work_id'=>$val['work_id']]);
                     $lists[$key]['delete_url'] = urlGen($req,$path,$operater_url,true);
 
-                    $operater_url = array_merge($query,['act'=>'work_app','work_id'=>$val['work_id']]);
-                    $lists[$key]['app_url'] = urlGen($req,$path,$operater_url,true);
+                    $operater_url = array_merge($query,['act'=>'work_app_copy','app_sid'=>$val['app_sid'],'work_id'=>$val['work_id']]);
+                    $lists[$key]['copy_url'] = urlGen($req,$path,$operater_url,true);
 
-                    $operater_url = array_merge($query,['act'=>'work_app_add','work_id'=>$val['work_id']]);
-                    $lists[$key]['add_app_url'] = urlGen($req,$path,$operater_url,true);
+                    $operater_url = array_merge($query,['act'=>'work_app_config_edit','app_sid'=>$val['app_sid'],'work_id'=>$val['work_id']]);
+                    $lists[$key]['config_edit_url'] = urlGen($req,$path,$operater_url,true);
 
-                    $operater_url = array_merge($query,['act'=>'work_admin_add','work_id'=>$val['work_id']]);
-                    $lists[$key]['add_admin_url'] = urlGen($req,$path,$operater_url,true);
-
-                    if($val['account_id']==$this->sessions['manager_uid']) {
-                        $lists[$key]['is_self'] = true;
-                    }else {
-                        $lists[$key]['is_self'] = false;
-                    }
-                    $lists[$key]['is_admin'] = true;
-
-                    $lists[$key]['app_count'] = 0;
-
-                    $admin_count_where = ['company_id'=>$req->company_id,'work_id'=>$val['work_id']];
-                    $lists[$key]['admin_count'] = $works_model->worksAdminCount($admin_count_where);
-
+                    $operater_url = array_merge($query,['act'=>'work_app_changestatus','app_sid'=>$val['app_sid'],'work_id'=>$val['work_id']]);
+                    $lists[$key]['changestatus_url'] = urlGen($req,$path,$operater_url,true);
 
                 }
-                $operater_url = array_merge($query,['act'=>'work_delete']);
+                $operater_url = array_merge($query,['act'=>'work_app_delete','work_id'=>$request_work_id]);
                 $operaters_delete_action =  urlGen($req,$path,$operater_url,true);
             }
 
-            $operater_url = array_merge($query,['act'=>'work_add']);
+            $operater_url = array_merge($query,['act'=>'work_app_add','work_id'=>$request_work_id]);
             $operaters_add_action =  urlGen($req,$path,$operater_url,true);
 
             $pagination = $page->show('Admin');
@@ -723,6 +714,7 @@ class Work extends PermissionBase
                 'delete_action_url'=>$operaters_delete_action,
                 'pagination' => $pagination,
                 'formget'=>$formget,
+                'work_id'=>$request_work_id,
             ];
 
 
@@ -739,16 +731,244 @@ class Work extends PermissionBase
         }
         $data = array_merge($nav_data,$data);
 
-        return $this->render($status,$mess,$data,'template','work/work');
+        return $this->render($status,$mess,$data,'template','work/worksapp');
     }
 
     /**
-     * @name 通用
-     * @priv allow
+     * @name 删除应用
+     * @priv ask
+     * @param RequestHelper $req
+     * @param array $preData
+     * @return \libs\asyncme\ResponeHelper
      */
-    public function work_common()
+    public function work_app_deleteAction(RequestHelper $req, array $preData)
     {
+        $request_work_id = $req->query_datas['work_id'];
+        if ($req->request_method=='POST') {
+            $remove_uids = $req->post_datas['ids'];
+        } else {
+            $request_uid = $req->query_datas['uid'];
+            $remove_uids = [$request_uid];
+        }
 
+        $flag = true;
+        if (!empty($remove_uids)) {
+            $work_model = new model\WorksAppModel($this->service);
+
+            foreach ($remove_uids as $remove_id) {
+                $where = ['app_sid'=>$remove_id,'work_id'=>$request_work_id];
+                $res = $work_model->deleteWorksApp($where);
+                $flag = $flag && $res;
+            }
+
+        }
+
+        if ($flag) {
+            $status = true;
+            $mess = '成功';
+            $data = [
+                'info'=>$mess,
+            ];
+        } else {
+            $status = false;
+            $mess = '失败，该账号不允许删除';
+            $data = [
+                'info'=>$mess,
+            ];
+        }
+
+        return $this->render($status,$mess,$data);
+    }
+
+    /**
+     * @name 模版对话框
+     * @param RequestHelper $req
+     * @param array $preData
+     */
+    public function work_app_template_dialogAction(RequestHelper $req, array $preData)
+    {
+        $request_type_id = $req->query_datas['type_id'];
+        $where = [
+            'status'=>1,
+        ];
+        if ($request_type_id) {
+            $where['type_id']=$request_type_id;
+        }
+        $raw = false;
+
+        $work_app_template_model = new model\WorksAppTemplateModel($this->service);
+        $total = $work_app_template_model->worksAppTemplateCount($where,$raw);
+        $path = [
+            'mark' => 'manager',
+            'bid'  => $req->company_id,
+            'pl_name'=>'manager',
+        ];
+
+        $pageLink = urlGen($req,$path,[],true);
+        $per_page = 20;
+        $page = $this->page($pageLink,$total,$per_page);
+        $work_app_template_lists = $work_app_template_model->worksAppTemplateLists($where,['ctime','desc'],$page->Current_page,$per_page,$raw);
+
+        if ($work_app_template_lists) {
+            foreach($work_app_template_lists  as $key => $template) {
+                if($template['preview']) {
+                    $template['preview'] = ng_mysql_json_safe_decode($template['preview']);
+                }
+                if($template['config']) {
+                    $template['config'] = ng_mysql_json_safe_decode($template['config']);
+                }
+                $work_app_template_lists[$key] = $template;
+            }
+        }
+        $pagination = $page->show('Admin');
+
+        $status = true;
+        $mess = '成功';
+        $data = [
+            'info'=>$mess,
+            'lists'=>$work_app_template_lists,
+            'total'=>$total,
+            'pagination' => $pagination,
+        ];
+        return $this->render($status,$mess,$data,'template','work_app_template/dialog');
+    }
+    /**
+     * @name 添加应用
+     * @priv ask
+     */
+    public function work_app_addAction(RequestHelper $req, array $preData)
+    {
+        try {
+            $request_work_id = $req->query_datas['work_id'];
+            //返回地址
+            $path = [
+                'mark' => 'manager',
+                'bid'  => $req->company_id,
+                'pl_name'=>'manager',
+            ];
+            $query = [
+                'mod'=>'work',
+                'act'=>'work'
+            ];
+
+            $cate_index_url=  urlGen($req,$path,$query,true);
+
+            //ajax获取模版
+            $path = [
+                'mark' => 'manager',
+                'bid'  => $req->company_id,
+                'pl_name'=>'manager',
+            ];
+            $query = [
+                'mod'=>'work',
+                'act'=>'work_app_template_dialog',
+            ];
+            $template_index_url=  urlGen($req,$path,$query,true);
+
+            //图片上传地址
+            $path = [
+                'mark' => 'manager',
+                'bid'  => $req->company_id,
+                'pl_name'=>'manager',
+            ];
+            $query = [
+                'mod'=>'asset',
+                'act'=>'upload',
+            ];
+            $asset_upload_url = urlGen($req,$path,$query,true);
+
+            $cates = $this->works_app_cates();
+
+            $status = true;
+            $mess = '成功';
+            $data = [
+                'cate_name'=>'业务管理',
+                'op'=>'add',
+                'cate_index_url'=>$cate_index_url,
+                'cates'=>$cates,
+                'asset_upload_url'=>$asset_upload_url,
+                'template_index_url'=>$template_index_url,
+                'work_id'=>$request_work_id,
+            ];
+            $work_model = new model\WorksAppModel($this->service);
+            $current_count = $work_model->worksAppCount(['company_id'=>$req->company_id,'work_id'=>$request_work_id]);
+
+            $hook_model = new model\HookModel($this->service);
+            $hook_model->assert_max_app_limit($req->company_id,$current_count);
+
+            if($req->request_method == 'POST') {
+                $post = $req->post_datas['post'];
+                if ($post) {
+                    //正常的编辑
+                    $map = [];
+                    if ($post['name'] ) {
+                        $map['name'] = $post['name'];
+                    } else {
+                        throw new \Exception('账号不对。');
+                    }
+                    $check_account_where = [
+                        'name'=>$map['name'],
+                        'company_id'=>$req->company_id,
+                        'work_id'=>$request_work_id,
+                    ];
+                    $exist = $work_model->worksAppCount($check_account_where);
+                    if ($exist) {
+                        throw new \Exception('业务已经存在');
+                    }
+
+                    $map['type_id'] = $post['type_id'];
+                    $map['company_id'] = $req->company_id;
+                    $map['work_id'] = $request_work_id;
+
+
+                    if ($post['thumb']) {
+                        $map['icon'] = $post['thumb'];
+                    }
+                    if (!empty($map['config'])) {
+                        $map['config'] = ng_mysql_json_safe_encode($map['config']);
+                    }
+                    if (!empty($map['project_config'])) {
+                        $map['project_config'] = ng_mysql_json_safe_encode($map['project_config']);
+                    }
+
+                    $map['account_id'] = $this->sessions['manager_uid'];
+                    $map['account_nickname'] = $this->sessions['manager_name'];
+                    $map['status'] = $post['status'];
+                    $map['ctime'] = time();
+                    $map['mtime'] = time();
+
+
+                    $flag = $work_model->addWorksApp($map);
+                    if (!$flag) {
+                        throw new \Exception('保存错误');
+                    } else {
+                        $data = [
+                            'info'=>'保存成功',
+                        ];
+                        $status = true;
+                        $mess = '成功';
+                    }
+
+                }
+
+            }
+        }catch (\Exception $e) {
+            $error = $e->getMessage();
+            $data = [
+                'error'=>$error,
+                'info'=>$error,
+
+            ];
+            $status = false;
+            $mess = '失败';
+        }
+
+        if($req->request_method == 'POST') {
+            //json返回
+            return $this->render($status,$mess,$data);
+        } else {
+            return $this->render($status,$mess,$data,'template','work/worksapp_edit');
+        }
     }
 
     /**
@@ -762,6 +982,32 @@ class Work extends PermissionBase
             0=>'默认分类',
             1=>'小程序',
             2=>'网站',
+        ];
+
+        if('**'==$cate) {
+            return $cates;
+        } else {
+            return $cates[$cate-1];
+        }
+    }
+
+    /**
+     * @name 分类设置
+     * @priv allow
+     */
+    protected function works_app_cates($cate='')
+    {
+        if(!is_numeric($cate)) $cate='**';
+        $cates = [
+            0=>'默认分类',
+            1=>'新零售商城',
+            2=>'企业展示',
+            3=>'工具类',
+            4=>'生活服务',
+            5=>'O2O',
+            6=>'服务预定',
+            6=>'互动功能',
+            7=>'文章资讯',
         ];
 
         if('**'==$cate) {

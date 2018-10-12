@@ -69,6 +69,24 @@ class HookModel extends ManagerModel
     }
 
     /**
+     * @name 判断是否最大的应用限制
+     * @param $company_id
+     * @param $current_num
+     * @throws \Exception
+     */
+    public function assert_max_app_limit($company_id,$current_num)
+    {
+        $config = $this->get_limit_config($company_id);
+        if (isset($config['max_app_count']) && $config['max_app_count']!=0) {
+            if ($config['max_app_count'] <= $current_num) {
+                throw new \Exception('已经到达最大限制');
+            }
+        } else {
+            throw new \Exception('没有权限创建');
+        }
+    }
+
+    /**
      * @name 获取最多的业务数
      * @param $company_id
      * @return int

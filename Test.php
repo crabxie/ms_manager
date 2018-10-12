@@ -145,3 +145,4 @@ class Test extends PermissionBase
         return $testjson;
     }
 }
+
