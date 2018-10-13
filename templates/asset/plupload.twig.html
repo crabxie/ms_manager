@@ -118,7 +118,9 @@
 <div class="wrap" style="padding: 5px;">
     <ul class="nav nav-tabs" id="uploader-tabs">
         <li class="active" data-tab="upload-file"><a href="#upload-file-tab" data-toggle="tab">上传文件</a></li>
+        {% if use_tab %}
         <li data-tab="network-file"><a href="#network-file-tab" data-toggle="tab">网络文件</a></li>
+        {% endif %}
     </ul>
     <div class="tab-content">
         {% if not error %}

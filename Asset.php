@@ -47,7 +47,11 @@ class Asset extends PermissionBase
             $upload_setting = $this->upload_setting($filetype);
 
             $filetypes = [];
-            foreach (['*','image','video','audio','file'] as $type) {
+            $all_types = ['*'];
+            if (isset($upload_setting['all_keys'])) {
+                $all_types = array_merge($all_types,$upload_setting['all_keys']);
+            }
+            foreach ($all_types as $type) {
                 if(isset($upload_setting[$type])) {
                     $filetypes[$type] = [
                         'title'=>ucfirst($type).' files',
@@ -84,6 +88,8 @@ class Asset extends PermissionBase
             ];
             $asset_upload_url = urlGen($req,$path,$query,true);
 
+            //使用网络文件
+            $use_tab = in_array($filetype,['*','image','video','audio']) ? true :false;
             $data = [
                 'admin_uid'=>$request_uid,
                 'upload_max_filesize'=>$upload_max_filesize,
@@ -93,6 +99,7 @@ class Asset extends PermissionBase
                 'extensions'=>$upload_setting[$filetype]['extensions'],
                 'mime_type'=>json_encode($mime_type),
                 'asset_upload_url'=>$asset_upload_url,
+                'use_tab'=>$use_tab,
             ];
             $status = true;
             $mess = '成功';
@@ -106,6 +113,7 @@ class Asset extends PermissionBase
                 'error'=>$e->getMessage()
             ];
         }
+
         return $this->render($status,$mess,$data,'template','asset/plupload');
 
     }
