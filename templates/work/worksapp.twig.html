@@ -39,7 +39,6 @@
             <th width="50">图标</th>
             <th width="50">类型</th>
             <th width="150">名称</th>
-            <th width="150">应用数</th>
             <th>状态</th>
             <th>创建时间</th>
             <th width="180">操作</th>
@@ -50,21 +49,20 @@
         {% for key,val in lists %}
         <tr>
             <td><input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]" value="{{ val.app_sid }}" title="ID:{{ val.app_sid }}"></td>
-            <td>{{ val.id }}</td>
+            <td>{{ val.app_sid }}</td>
             <td>{{ val.company_id }}</td>
             <td>
-                {% if val.thumb == 'default' %}
-                <img src="{{ val.avatar }}"  onerror="this.onerror='';src='/wxapp/asset/simpleboot/images/avatar/default.jpg'" width="24"/>
+                {% if val.icon == 'default' %}
+                <img src="{{ val.icon }}"  onerror="this.onerror='';src='/wxapp/asset/simpleboot/images/avatar/default.jpg'" width="24"/>
                 {% else %}
-                <a href="javascript:parent.image_preview_dialog('{{ val.thumb|prefixWith('/wxapp/data/','default') }}');" title="点击查看大图">
-                    <img src="{{ val.thumb|prefixWith('/wxapp/data/','default') }}"  onerror="this.onerror='';src='/wxapp/asset/simpleboot/images/avatar/default.jpg'" width="24"/>
+                <a href="javascript:parent.image_preview_dialog('{{ val.icon|prefixWith('/wxapp/data/','default') }}');" title="点击查看大图">
+                    <img src="{{ val.icon|prefixWith('/wxapp/data/','default') }}"  onerror="this.onerror='';src='/wxapp/asset/simpleboot/images/avatar/default.jpg'" width="24"/>
                 </a>
                 {% endif %}
 
             </td>
             <td>{{ val.type_id_name }}</td>
             <td>{{ val.name }}</td>
-            <td>{{ val.app_count}}</td>
             <td>
                 {% if val.status == 1 %}
                 <span style="color: green">正常</span>

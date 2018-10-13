@@ -4,31 +4,72 @@
 {% block frame_global_style %}
 <style type="text/css">
     #container .conteiner_wrap {padding:10px;}
-    .list_content {display: flex;font-size: 12px;color: #0b6cbc;}
-    .list_item{width: 128px;height: 146px;border: 1px solid #ccc;margin: 5px; float: left;overflow: hidden;}
-    .list_item img{width: 100%;margin: 0 auto;overflow: hidden;}
-    .item_img_box{width: 100%;height: 124px; overflow: hidden;}
-    .list_item input[type='radio']{float: left;margin-left: 10px;}
-    .list_item label{float: left;margin-left: 10px;}
+    .config_item input[type='text']{width: 400px;}
 </style>
 {% endblock %}
 
 {% block frame_head_script %}
 <script type="application/javascript">
-    function get_selected_templates(){
-        var val=$('input:radio[name="template_sid"]:checked').val();
-
-        if (!val) {
-            alert('请选择模版！');
-            return false;
-        }
-        var name = $('#'+val).val();
-        var template = {
-            'sid' : val,
-            'name' : name,
-        };
-        return template;
+    GV = GV ? GV : {};
+    GV.UPLOAD_HANDLE = '{{ asset_upload_url }}';
+    var _extram_data = {
+        admin_uid : "{{ admin_uid }}"
     }
+    var app_extra_params='manager';
+    function get_selected_config(){
+        var input_lists = [];
+        $('.config_item input').each(function(){
+            var self = $(this);
+            var c_name = $(self).attr('name');
+            var c_val = $(self).val();
+            input_lists.push({'name':c_name,'val':c_val});
+        });
+
+        return input_lists;
+    }
+
+    function open_config_upload_dialog(dialog_title,callback,extra_params,multi,filetype,app){
+        multi = multi?1:0;
+        filetype = filetype?filetype:'image';
+        app = app?app:GV.APP;
+        var params = '&multi='+multi+'&filetype='+filetype+'&app='+app ;
+        console.log(escape2Html(GV.UPLOAD_HANDLE)+params);
+        Wind.use("artDialog","iframeTools",function(){
+            var upload_handle = escape2Html(GV.UPLOAD_HANDLE)+params;
+            art.dialog.open( upload_handle, {
+                title: dialog_title,
+                id: new Date().getTime(),
+                width: '450px',
+                height: '250px',
+                lock: true,
+                fixed: true,
+                background:"#CCCCCC",
+                opacity:0,
+                ok: function() {
+                    if (typeof callback =='function') {
+                        var iframewindow = this.iframe.contentWindow;
+                        var files=iframewindow.get_selected_files();
+                        if(files){
+                            callback.apply(this, [this, files,extra_params]);
+                        }else{
+                            return false;
+                        }
+
+                    }
+                },
+                cancel: true
+            });
+        });
+    }
+
+    function config_upload_one(dialog_title, input_selector, filetype, extra_params, app) {
+        open_config_upload_dialog(dialog_title, function (dialog, files) {
+            $(input_selector).val(files[0].filepath);
+            $(input_selector + '-name').text(" "+files[0].name+" ");
+        }, extra_params, 0, filetype, app);
+    }
+
+
 </script>
 {% endblock %}
 
@@ -58,10 +99,25 @@
                 </tr>
                 <tr>
                     <td>
-                        {% if config_type and config_type[key]=='file' %}
-                        上传
+                        {% if config_type and config_type[key]!='text' %}
+                        <input type="hidden" id="config_{{key}}" name="post_c[{{key}}]"  value="{{ val }}" placeholder="请输入" />
+                            {% if config_type=='image' %}
+                            <a href="javascript:upload_one_image('上传{{config_desc[key]}}','#config_{{key}}',_extram_data,app_extra_params);">
+                                {% if not info.thumb %}
+                                <img src="/wxapp/asset/simpleboot/images/default-thumbnail.png" id="config_{{key}}-preview" width="135" style="cursor: hand"/>
+                                {% else %}
+                                <img src="{{info.thumb|prefixWith('/wxapp/data/','default')}}" id="config_{{key}}-preview" width="135" style="cursor: hand" onerror="this.onerror='';src='/wxapp/asset/simpleboot/images/default-thumbnail.png'"/>
+                                {% endif %}
+
+                            </a>
+                            {% else %}
+                            <a href="javascript:config_upload_one('上传{{config_desc[key]}}','#config_{{key}}','cert',_extram_data,app_extra_params)">
+                                <div id="config_{{key}}-name"></div>
+                                <span>上传</span>
+                            </a>
+                            {% endif %}
                         {% else %}
-                        <input type="text" name="post_c[{{key}}]"  value="{{ val }}" placeholder="请输入" />
+                        <input type="text" name="post_c[{{key}}]"  value="{{ val }}" placeholder="请输入{{config_desc[key]}}" />
                         {% endif %}
                     </td>
                 </tr>

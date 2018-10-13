@@ -26,7 +26,7 @@
     var _extram_data = {
         admin_uid : "{{ admin_uid }}"
     }
-    var app_extra_params='sys';
+    var app_extra_params='manager';
     var dependencies = 'type_id';
 </script>
 {% endblock %}
@@ -226,7 +226,11 @@
                     var iframewindow = this.iframe.contentWindow;
                     var datas=iframewindow.get_selected_config();
                     if(datas){
-                        $('#config_value').text(datas.data);
+                        if(datas.length) {
+                            $('#config_name').text('已配置了'+datas.length+'项');
+                        }
+                        $('#config_value').text(JSON.stringify(datas));
+                        console.log(JSON.stringify(datas));
                     }else{
                         return false;
                     }

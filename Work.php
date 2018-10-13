@@ -10,7 +10,9 @@ namespace manager;
 
 use libs\asyncme\RequestHelper;
 use manager\model\AccountModel;
+use manager\model\ConfigModel;
 use manager\model\WorksAppModel;
+use manager\model\WorksAppTemplateModel;
 use PHPSQLParser\PHPSQLParser;
 use PHPSQLParser\utils\PHPSQLParserConstants;
 use libs\asyncme\Page as Page;
@@ -104,6 +106,7 @@ class Work extends PermissionBase
             $query = [
                 'mod'=>'work',
             ];
+            $worksapp_model = new model\WorksAppModel($this->service);
             if ($lists) {
 
                 foreach ($lists as $key=>$val) {
@@ -138,7 +141,9 @@ class Work extends PermissionBase
                     }
                     $lists[$key]['is_admin'] = true;
 
-                    $lists[$key]['app_count'] = 0;
+
+                    $worksapp_where = ['work_id'=>$val['work_id'],'company_id'=>$req->company_id];
+                    $lists[$key]['app_count'] = $worksapp_model->worksAppCount($worksapp_where);
 
                     $admin_count_where = ['company_id'=>$req->company_id,'work_id'=>$val['work_id']];
                     $lists[$key]['admin_count'] = $works_model->worksAdminCount($admin_count_where);
@@ -798,9 +803,12 @@ class Work extends PermissionBase
         }
         $raw = false;
         $config_model = new model\ConfigModel($this->service);
-        $config_info = $config_model->getConfigInfo(['name'=>'manager_pay_minapp_setting']);
+
+        //需要根据不同的小程序类型获取不同的配置
+        $config_template_name = 'manager_pay_minapp_setting';
+        $config_info = $config_model->getConfigInfo(['name'=>$config_template_name]);
         if (!$config_info) {
-            throw new \Exception('请配置"manager_pay_minapp_setting"');
+            throw new \Exception('请配置"'.$config_template_name.'"');
         }
         $config = ng_mysql_json_safe_decode($config_info['config']);
         $config_type = [];
@@ -825,7 +833,7 @@ class Work extends PermissionBase
             if(preg_match("/(.+):\/\//is",$key,$rs)) {
                 $old_key=$key;
 
-                $key = preg_replace("/:\/\//is",'@',$key);
+                $key = str_replace($rs[1]."://","",$key);
                 $config[$key] = $val;
                 $config_type[$key] = $rs[1];
 
@@ -836,6 +844,19 @@ class Work extends PermissionBase
             }
         }
 
+        //图片上传地址
+        $path = [
+            'mark' => 'manager',
+            'bid'  => $req->company_id,
+            'pl_name'=>'manager',
+        ];
+        $query = [
+            'mod'=>'asset',
+            'act'=>'upload',
+            'tmp'=>'tmp',
+        ];
+        $asset_upload_url = urlGen($req,$path,$query,true);
+
 
         $status = true;
         $mess = '成功';
@@ -843,6 +864,7 @@ class Work extends PermissionBase
             'configs'=>$config,
             'config_desc'=>$config_desc,
             'config_type'=>$config_type,
+            'asset_upload_url'=>$asset_upload_url,
         ];
         return $this->render($status,$mess,$data,'template','work/config_dialog');
 
@@ -916,7 +938,8 @@ class Work extends PermissionBase
             ];
             $query = [
                 'mod'=>'work',
-                'act'=>'work_app'
+                'act'=>'work_app',
+                'work_id'=>$request_work_id,
             ];
 
             $cate_index_url=  urlGen($req,$path,$query,true);
@@ -996,8 +1019,23 @@ class Work extends PermissionBase
                     ];
                     $exist = $work_model->worksAppCount($check_account_where);
                     if ($exist) {
-                        throw new \Exception('业务已经存在');
+                        throw new \Exception('应用已经存在');
                     }
+
+                    if(!$post['template_sid']) {
+                        throw new \Exception('请选择模版');
+                    }
+                    $works_app_template_model = new model\WorksAppTemplateModel($this->service);
+                    $works_app_template_info = $works_app_template_model->worksAppTemplateInfo(['template_sid'=>$post['template_sid'],'status'=>1]);
+                    if (!$works_app_template_info || !$works_app_template_info['config']) {
+                        throw new \Exception('模版不存在');
+                    }
+                    $map['config'] = $works_app_template_info['config'];
+
+                    if (!empty($map['config'])) {
+                        $map['config'] = ng_mysql_json_safe_encode($map['config']);
+                    }
+
 
                     $map['type_id'] = $post['type_id'];
                     $map['company_id'] = $req->company_id;
@@ -1007,11 +1045,66 @@ class Work extends PermissionBase
                     if ($post['thumb']) {
                         $map['icon'] = $post['thumb'];
                     }
-                    if (!empty($map['config'])) {
-                        $map['config'] = ng_mysql_json_safe_encode($map['config']);
+
+
+                    if(!$post['config_value']) {
+                        throw new \Exception('请填写配置');
+                    }
+                    $config_value = preg_replace_callback(
+                        "/post_c\[(.+?)\]/is",
+                        function ($matches) {
+                            return strtolower($matches[1]);
+                        },
+                        $post['config_value']
+                        );
+                    $config_value = json_decode($config_value,true);
+                    $map['project_config'] = [];
+                    if (is_array($config_value)) {
+                        foreach($config_value as $val) {
+                            $map['project_config'][$val['name']] = $val['val'];
+                        }
+                    }
+                    if (isset($map['project_config']['cert_file'])) {
+                        $cert_file_info = pathinfo($map['project_config']['cert_file']);
+                        if (!in_array(strtolower($cert_file_info['extension']),['p12','pem'])) {
+                            unset($map['project_config']['cert_file']);
+                        } else {
+                            if(preg_match('/^\/tmp\//is',$map['project_config']['cert_file'])) {
+                                $origin_file = './data'.$map['project_config']['cert_file'];
+                                if (!file_exists($origin_file)) {
+                                    throw new \Exception('证书文件不存在');
+                                }
+
+                                //移动
+                                $config_model = new model\ConfigModel($this->service);
+                                $cert_global = 'cert_global';
+                                $cert_global_config = $config_model->getConfig($cert_global);
+                                if (!$cert_global_config || !$cert_global_config['cert_path']) {
+                                    throw new \Exception('请设置证书安装路径');
+                                }
+                                $target_file = str_replace('/tmp/','/'.$req->company_id.'/',$map['project_config']['cert_file']);
+
+                                $target_file = '..'.$cert_global_config['cert_path'].''.$target_file;
+                                $target_info = pathinfo($target_file);
+
+                                if (!is_dir($target_info['dirname'].'/')) {
+                                    mkdir($target_info['dirname'].'/',0755,true);
+                                }
+
+                                @copy($origin_file,$target_file);
+                                unlink($origin_file);
+                                $map['project_config']['cert_file'] = $target_file;
+
+                            } else {
+                                //编辑时候有用，不处理
+                            }
+                        }
+
                     }
                     if (!empty($map['project_config'])) {
                         $map['project_config'] = ng_mysql_json_safe_encode($map['project_config']);
+                    } else {
+                        throw new \Exception('配置不正确');
                     }
 
                     $map['account_id'] = $this->sessions['manager_uid'];

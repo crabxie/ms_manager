@@ -50,7 +50,7 @@
         {% for key,val in lists %}
         <tr>
             <td><input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]" value="{{ val.id }}" title="ID:{{ val.id }}"></td>
-            <td>{{ val.id }}</td>
+            <td>{{ val.work_id }}</td>
             <td>{{ val.company_id }}</td>
             <td>
                 {% if val.thumb == 'default' %}

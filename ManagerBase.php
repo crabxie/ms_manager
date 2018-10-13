@@ -216,6 +216,7 @@ class ManagerBase extends Plugins
         if ($config_vals['config']) {
             $c_all = [];
             $max_fileSize = 0;
+            $upload_setting['all_keys'] = array_keys($config_vals['config']);
             foreach ($config_vals['config'] as $key=>$val) {
                 if ($val) {
                     list($fileSize,$fileExt) = explode('|',$val);
