@@ -697,6 +697,8 @@ class Work extends PermissionBase
                     $operater_url = array_merge($query,['act'=>'work_app_copy','app_sid'=>$val['app_sid'],'work_id'=>$val['work_id']]);
                     $lists[$key]['copy_url'] = urlGen($req,$path,$operater_url,true);
 
+                    $operater_url = array_merge($query,['act'=>'app_editor','app_sid'=>$val['app_sid'],'work_id'=>$val['work_id']]);
+                    $lists[$key]['app_editor'] = urlGen($req,$path,$operater_url,true);
 
 
                 }
@@ -1517,6 +1519,36 @@ class Work extends PermissionBase
             //json返回
             return $this->render($status, $mess, $data);
         }
+    }
+
+    /**
+     * @name 应用编辑器
+     * @param RequestHelper $req
+     * @param array $preData
+     * @priv ask
+     */
+    public function app_editorAction(RequestHelper $req, array $preData)
+    {
+        try {
+            $request_work_id = $req->query_datas['work_id'];
+            $request_app_sid = $req->query_datas['app_sid'];
+            $ngeditor_root = dirname(dirname(__FILE__)).'/ngeditor/';
+            $ngeditor_core_js_file = 'ng_editor.js';
+            $ngeditor_core_index_file = 'index.html';
+            if(!is_dir($ngeditor_root) || !file_exists($ngeditor_root.$ngeditor_core_js_file)) {
+                throw new  \Exception('编辑器未安装');
+            }
+            require $ngeditor_root.$ngeditor_core_index_file;
+
+
+        } catch (\Exception $e) {
+            $error = $e->getMessage();
+        }
+        if($error){
+            echo "<div style='margin:30px auto;width:100%;height:100px;text-align:center;font-size:22px;'>$error</div>";
+        }
+
+        die();
     }
     /**
      * @name 分类设置
