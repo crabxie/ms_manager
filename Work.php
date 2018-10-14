@@ -733,7 +733,7 @@ class Work extends PermissionBase
         }
         $data = array_merge($nav_data,$data);
 
-        return $this->render($status,$mess,$data,'template','work/worksapp');
+        return $this->render($status,$mess,$data,'template','work_app_template/worksapp');
     }
 
     /**
@@ -966,8 +966,6 @@ class Work extends PermissionBase
             ];
             $config_url=  urlGen($req,$path,$query,true);
 
-
-
             //图片上传地址
             $path = [
                 'mark' => 'manager',
@@ -1114,10 +1112,22 @@ class Work extends PermissionBase
                     $map['mtime'] = time();
 
 
+                    $map['app_sid'] = substr(md5(getRandomStr().microtime(true)),8,16);
                     $flag = $work_model->addWorksApp($map);
                     if (!$flag) {
                         throw new \Exception('保存错误');
                     } else {
+                        $works_app_template_rel_model = new model\WorksAppTemplateRelModel($this->service);
+                        $rel_where = [
+                            'company_id'=>$req->company_id,
+                            'work_id'=>$request_work_id,
+                            'app_sid'=>$map['app_sid'],
+                            'template_sid'=>$post['template_sid'],
+                        ];
+                        $works_app_template_rel_count = $works_app_template_rel_model->worksAppTemplateRelCount($rel_where);
+                        if(!$works_app_template_rel_count) {
+                            $works_app_template_rel_model->addWorksAppTemplateRel($rel_where);
+                        }
                         $data = [
                             'info'=>'保存成功',
                         ];
@@ -1143,7 +1153,7 @@ class Work extends PermissionBase
             //json返回
             return $this->render($status,$mess,$data);
         } else {
-            return $this->render($status,$mess,$data,'template','work/worksapp_edit');
+            return $this->render($status,$mess,$data,'template','work_app_template/worksapp_edit');
         }
     }
 
@@ -1271,21 +1281,38 @@ class Work extends PermissionBase
                     if(!$post['template_sid']) {
                         throw new \Exception('请选择模版');
                     }
-                    $works_app_template_model = new model\WorksAppTemplateModel($this->service);
-                    $works_app_template_info = $works_app_template_model->worksAppTemplateInfo(['template_sid'=>$post['template_sid'],'status'=>1]);
-                    if (!$works_app_template_info || !$works_app_template_info['config']) {
-                        throw new \Exception('模版不存在');
-                    }
-                    $map['config'] = $works_app_template_info['config'];
+                    if($post['template_sid']!=$worksApp_info['template_sid']) {
+                        //更换模版
+                        $works_app_template_model = new model\WorksAppTemplateModel($this->service);
+                        $works_app_template_info = $works_app_template_model->worksAppTemplateInfo(['template_sid'=>$post['template_sid'],'status'=>1]);
+                        if (!$works_app_template_info || !$works_app_template_info['config']) {
+                            throw new \Exception('模版不存在');
+                        }
+                        $map['config'] = $works_app_template_info['config'];
+                        $map['config']['template_sid'] = $post['template_sid'];
+                        if ($post['template_name']) {
+                            $map['config']['template_name'] = $post['template_name'];
+                        }
 
-                    if ($post['template_name']) {
-                        $map['config']['template_name'] = $post['template_name'];
-                    }
+                        if (!empty($map['config'])) {
+                            $map['config'] = ng_mysql_json_safe_encode($map['config']);
+                        }
 
 
-                    if (!empty($map['config'])) {
-                        $map['config'] = ng_mysql_json_safe_encode($map['config']);
                     }
+
+                    $works_app_template_rel_model = new model\WorksAppTemplateRelModel($this->service);
+                    $rel_where = [
+                        'company_id'=>$req->company_id,
+                        'work_id'=>$request_work_id,
+                        'app_sid'=>$request_app_sid,
+                        'template_sid'=>$post['template_sid'],
+                    ];
+                    $works_app_template_rel_count = $works_app_template_rel_model->worksAppTemplateRelCount($rel_where);
+                    if(!$works_app_template_rel_count) {
+                        $works_app_template_rel_model->addWorksAppTemplateRel($rel_where);
+                    }
+
 
 
                     $map['type_id'] = $post['type_id'];
@@ -1393,7 +1420,7 @@ class Work extends PermissionBase
             //json返回
             return $this->render($status,$mess,$data);
         } else {
-            return $this->render($status,$mess,$data,'template','work/worksapp_edit');
+            return $this->render($status,$mess,$data,'template','work_app_template/worksapp_edit');
         }
     }
 
@@ -1441,18 +1468,33 @@ class Work extends PermissionBase
                 if (!$check_exist)break;
             }
             $map['name'] = $new_name;
+            $template_sid = '';
             if (!empty($map['config'])) {
+                $template_sid = $map['config']['template_sid'];
                 $map['config'] = ng_mysql_json_safe_encode($map['config']);
             }
             if (!empty($map['project_config'])) {
                 $map['project_config'] = ng_mysql_json_safe_encode($map['project_config']);
             }
 
+            $map['app_sid'] = substr(md5(getRandomStr().microtime(true)),8,16);
             $flag = $work_model->addWorksApp($map);
 
             if (!$flag) {
                 throw new \Exception('复制失败');
             }
+            $works_app_template_rel_model = new model\WorksAppTemplateRelModel($this->service);
+            $rel_where = [
+                'company_id'=>$req->company_id,
+                'work_id'=>$request_work_id,
+                'app_sid'=>$map['app_sid'],
+                'template_sid'=>$template_sid,
+            ];
+            $works_app_template_rel_count = $works_app_template_rel_model->worksAppTemplateRelCount($rel_where);
+            if(!$works_app_template_rel_count) {
+                $works_app_template_rel_model->addWorksAppTemplateRel($rel_where);
+            }
+
             $status = true;
             $mess = '复制成功';
             $data = [
