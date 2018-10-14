@@ -60,14 +60,17 @@
                 cancel: true
             });
         });
-    }
+    };
 
     function config_upload_one(dialog_title, input_selector, filetype, extra_params, app) {
         open_config_upload_dialog(dialog_title, function (dialog, files) {
             $(input_selector).val(files[0].filepath);
-            $(input_selector + '-name').text(" "+files[0].name+" ");
+            $(input_selector + '_name_str').text(" "+files[0].name+" ");
+            $(input_selector + '_name').val(" "+files[0].name+" ");
         }, extra_params, 0, filetype, app);
-    }
+    };
+
+
 
 
 </script>
@@ -112,12 +115,13 @@
                             </a>
                             {% else %}
                             <a href="javascript:config_upload_one('上传{{config_desc[key]}}','#config_{{key}}','cert',_extram_data,app_extra_params)">
-                                <div id="config_{{key}}-name"></div>
+                                <div id="config_{{key}}_name_str"></div>
+                                <input type="hidden" id="config_{{key}}_name" name="post_c[{{key}}_name]"  value="{{ val }}"  />
                                 <span>上传</span>
                             </a>
                             {% endif %}
                         {% else %}
-                        <input type="text" name="post_c[{{key}}]"  value="{{ val }}" placeholder="请输入{{config_desc[key]}}" />
+                        <input id="config_{{key}}" type="text" name="post_c[{{key}}]"  value="{{ val }}" placeholder="请输入{{config_desc[key]}}" />
                         {% endif %}
                     </td>
                 </tr>
@@ -142,7 +146,28 @@
 {% endblock %}
 {% block frame_footer %}
 <script type="application/javascript">
+    $(function(){
+        Wind.use("artDialog","iframeTools",function(){
+            if (typeof art.dialog.opener.configDefaultData == 'function') {
+                var default_data = art.dialog.opener.configDefaultData();
+                if (typeof default_data == 'object') {
 
+                    for(d_key in default_data) {
+                        console.log(default_data[d_key]);
+                        var filed_name = default_data[d_key].name;
+                        var filed_id = filed_name.replace(/post_c\[(.+)\]/g,"$1");
+                        if (filed_id) {
+                            $('#config_'+filed_id).val(default_data[d_key].val);
+                            $('#config_'+filed_id+'_str').text(default_data[d_key].val);
+                        }
+
+                    }
+                }
+
+            }
+        });
+
+    });
 </script>
 
 {% endblock %}

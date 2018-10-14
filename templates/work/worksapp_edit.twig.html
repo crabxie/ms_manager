@@ -73,8 +73,9 @@
                     <tr>
                         <th width="80">模版</th>
                         <td>
-                            <span id="template_name">未选择</span>
-                            <input id="template_sid" name="post[template_sid]" value="" type="hidden">
+                            <span id="template_name">{{info.template_name|default('未选择')}}</span>
+                            <input id="template_sid" name="post[template_sid]" value="{{info.template_sid}}" type="hidden">
+                            <input id="template_sid_name" name="post[template_name]" value="{{info.template_name}}" type="hidden">
                             <a href="javascript:openTemplateDialog('选择模版','template',_extram_data,app_extra_params,dependencies);">选择模版</a>
                         </td>
                     </tr>
@@ -82,8 +83,8 @@
                     <tr>
                         <th width="80">配置</th>
                         <td>
-                            <span id="config_name">未设置</span>
-                            <textarea id="config_value" name="post[config_value]" style="display: none"></textarea>
+                            <span id="config_name">{% if info.project_config_count %}已配置了{{info.project_config_count}}项{% else %}未配置{% endif %}</span>
+                            <textarea id="config_value" name="post[config_value]" style="display: none">{{info.project_config}}</textarea>
                             <a href="javascript:openConfigDialog('填写配置','config',_extram_data,app_extra_params,dependencies);">填写配置</a>
                         </td>
                     </tr>
@@ -115,12 +116,12 @@
                     <tr>
                         <td>
                             <div style="text-align: center;">
-                                <input type="hidden" name="post[thumb]" id="thumb" value="{{info.thumb}}">
+                                <input type="hidden" name="post[thumb]" id="thumb" value="{{info.icon}}">
                                 <a href="javascript:upload_one_image('图片上传','#thumb',_extram_data,app_extra_params);">
-                                    {% if not info.thumb %}
+                                    {% if not info.icon %}
                                     <img src="/wxapp/asset/simpleboot/images/default-thumbnail.png" id="thumb-preview" width="135" style="cursor: hand"/>
                                     {% else %}
-                                    <img src="{{info.thumb|prefixWith('/wxapp/data/','default')}}" id="thumb-preview" width="135" style="cursor: hand" onerror="this.onerror='';src='/wxapp/asset/simpleboot/images/default-thumbnail.png'"/>
+                                    <img src="{{info.icon|prefixWith('/wxapp/data/','default')}}" id="thumb-preview" width="135" style="cursor: hand" onerror="this.onerror='';src='/wxapp/asset/simpleboot/images/default-thumbnail.png'"/>
                                     {% endif %}
 
                                 </a>
@@ -158,6 +159,7 @@
             var valstr = $(this).val();
             $('#template_name').text('未选择');
             $('#template_sid').val('');
+            $('#template_sid_name').val('');
         });
     });
 
@@ -190,6 +192,7 @@
                     if(datas){
                         $('#template_sid').val(datas.sid);
                         $('#template_name').text(datas.name);
+                        $('#template_sid_name').val(datas.name);
                     }else{
                         return false;
                     }
@@ -197,6 +200,16 @@
                 cancel: true
             });
         });
+    }
+
+    function configDefaultData(){
+
+        var default_val = $('#config_value').text();
+        var return_val = '';
+        if (default_val) {
+            return_val = JSON.parse(default_val);
+        }
+        return return_val;
     }
 
     function openConfigDialog( dialog_title, input_selector, extra_params, app,dependencies )
@@ -230,7 +243,6 @@
                             $('#config_name').text('已配置了'+datas.length+'项');
                         }
                         $('#config_value').text(JSON.stringify(datas));
-                        console.log(JSON.stringify(datas));
                     }else{
                         return false;
                     }

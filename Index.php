@@ -130,11 +130,13 @@ class Index extends PermissionBase
         $frontend_model = new model\FontendUserModel($this->service);
         $material_model = new model\AssetsModel($this->service);
         $hook_model = new  model\HookModel($this->service);
+        $works_app_model = new model\WorksAppModel($this->service);
 
         $where = [
             'company_id'=>$req->company_id,
         ];
         $total_work_count = $work_model->worksCount($where);
+        $total_work_app_count = $works_app_model->worksAppCount($where);
         $frontend_user_count = $frontend_model->userCount($where);
         $material_count = $material_model->assetsCount($where);
         $max_work_count = $hook_model->get_max_work_limit($where['company_id']);
@@ -158,7 +160,7 @@ class Index extends PermissionBase
                 ['name'=>'允许创建业务数','value'=>$max_work_count],
             ],
             '应用'=>[
-                ['name'=>'应用总数','value'=>0],
+                ['name'=>'应用总数','value'=>$total_work_app_count],
             ],
             '用户'=>[
                 ['name'=>'用户总数','value'=>$frontend_user_count],

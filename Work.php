@@ -197,7 +197,7 @@ class Work extends PermissionBase
         if ($req->request_method=='POST') {
             $remove_uids = $req->post_datas['ids'];
         } else {
-            $request_uid = $req->query_datas['uid'];
+            $request_uid = $req->query_datas['work_id'];
             $remove_uids = [$request_uid];
         }
 
@@ -697,11 +697,7 @@ class Work extends PermissionBase
                     $operater_url = array_merge($query,['act'=>'work_app_copy','app_sid'=>$val['app_sid'],'work_id'=>$val['work_id']]);
                     $lists[$key]['copy_url'] = urlGen($req,$path,$operater_url,true);
 
-                    $operater_url = array_merge($query,['act'=>'work_app_config_edit','app_sid'=>$val['app_sid'],'work_id'=>$val['work_id']]);
-                    $lists[$key]['config_edit_url'] = urlGen($req,$path,$operater_url,true);
 
-                    $operater_url = array_merge($query,['act'=>'work_app_changestatus','app_sid'=>$val['app_sid'],'work_id'=>$val['work_id']]);
-                    $lists[$key]['changestatus_url'] = urlGen($req,$path,$operater_url,true);
 
                 }
                 $operater_url = array_merge($query,['act'=>'work_app_delete','work_id'=>$request_work_id]);
@@ -753,7 +749,7 @@ class Work extends PermissionBase
         if ($req->request_method=='POST') {
             $remove_uids = $req->post_datas['ids'];
         } else {
-            $request_uid = $req->query_datas['uid'];
+            $request_uid = $req->query_datas['app_sid'];
             $remove_uids = [$request_uid];
         }
 
@@ -774,12 +770,14 @@ class Work extends PermissionBase
             $mess = '成功';
             $data = [
                 'info'=>$mess,
+                'status'=>$status,
             ];
         } else {
             $status = false;
             $mess = '失败，该账号不允许删除';
             $data = [
                 'info'=>$mess,
+                'status'=>$status,
             ];
         }
 
@@ -1031,11 +1029,14 @@ class Work extends PermissionBase
                         throw new \Exception('模版不存在');
                     }
                     $map['config'] = $works_app_template_info['config'];
+                    $map['config']['template_sid'] = $post['template_sid'];
+                    if ($post['template_name']) {
+                        $map['config']['template_name'] = $post['template_name'];
+                    }
 
                     if (!empty($map['config'])) {
                         $map['config'] = ng_mysql_json_safe_encode($map['config']);
                     }
-
 
                     $map['type_id'] = $post['type_id'];
                     $map['company_id'] = $req->company_id;
@@ -1045,7 +1046,6 @@ class Work extends PermissionBase
                     if ($post['thumb']) {
                         $map['icon'] = $post['thumb'];
                     }
-
 
                     if(!$post['config_value']) {
                         throw new \Exception('请填写配置');
@@ -1147,6 +1147,335 @@ class Work extends PermissionBase
         }
     }
 
+    /**
+     * @name 编辑应用
+     * @priv ask
+     */
+    public function work_app_editAction(RequestHelper $req, array $preData)
+    {
+        try {
+            $request_work_id = $req->query_datas['work_id'];
+            $request_app_sid = $req->query_datas['app_sid'];
+            //返回地址
+            $path = [
+                'mark' => 'manager',
+                'bid'  => $req->company_id,
+                'pl_name'=>'manager',
+            ];
+            $query = [
+                'mod'=>'work',
+                'act'=>'work_app',
+                'work_id'=>$request_work_id,
+            ];
+
+            $cate_index_url=  urlGen($req,$path,$query,true);
+
+            //对话框获取模版
+            $path = [
+                'mark' => 'manager',
+                'bid'  => $req->company_id,
+                'pl_name'=>'manager',
+            ];
+            $query = [
+                'mod'=>'work',
+                'act'=>'work_app_template_dialog',
+            ];
+            $template_index_url=  urlGen($req,$path,$query,true);
+
+            //对话框获取配置
+            $path = [
+                'mark' => 'manager',
+                'bid'  => $req->company_id,
+                'pl_name'=>'manager',
+            ];
+            $query = [
+                'mod'=>'work',
+                'act'=>'work_app_config_dialog',
+            ];
+            $config_url=  urlGen($req,$path,$query,true);
+
+
+
+            //图片上传地址
+            $path = [
+                'mark' => 'manager',
+                'bid'  => $req->company_id,
+                'pl_name'=>'manager',
+            ];
+            $query = [
+                'mod'=>'asset',
+                'act'=>'upload',
+            ];
+            $asset_upload_url = urlGen($req,$path,$query,true);
+
+            $cates = $this->works_app_cates();
+
+            $work_model = new model\WorksAppModel($this->service);
+            $where = [
+                'company_id'=>$req->company_id,
+                'work_id'=>$request_work_id,
+                'app_sid'=>$request_app_sid,
+            ];
+            $worksApp_info = $work_model->worksAppInfo($where);
+            if (!$worksApp_info) {
+                throw new \Exception('应用不存在');
+            }
+            $worksApp_info['template_name'] = $worksApp_info['config']['template_name'];
+            $worksApp_info['template_sid'] = $worksApp_info['config']['template_sid'];
+
+            if ($worksApp_info['project_config']) {
+                $worksApp_info['project_config_count'] = count($worksApp_info['project_config']);
+                $project_config = [];
+                foreach($worksApp_info['project_config'] as $key=>$val) {
+                    $project_config[] = ['name'=>'post_c['.$key.']','val'=>$val];
+                }
+                $worksApp_info['project_config'] = json_encode($project_config);
+
+            }
+
+            $status = true;
+            $mess = '成功';
+            $data = [
+                'cate_name'=>'应用管理',
+                'cate_index_url'=>$cate_index_url,
+                'cates'=>$cates,
+                'info'=>$worksApp_info,
+                'asset_upload_url'=>$asset_upload_url,
+                'template_index_url'=>$template_index_url,
+                'config_url'=>$config_url,
+                'work_id'=>$request_work_id,
+                'app_sid'=>$request_app_sid,
+            ];
+
+
+            if($req->request_method == 'POST') {
+                $post = $req->post_datas['post'];
+                if ($post) {
+                    //正常的编辑
+                    $map = [];
+                    if ($post['name'] ) {
+                        $map['name'] = $post['name'];
+                    } else {
+                        throw new \Exception('账号不对。');
+                    }
+                    $check_account_where = [
+                        'name'=>$map['name'],
+                        'company_id'=>$req->company_id,
+                        'work_id'=>$request_work_id,
+                    ];
+                    $worksApp_info = $work_model->worksAppInfo($check_account_where);
+                    if ($worksApp_info && $worksApp_info['app_sid']!=$request_app_sid) {
+                        throw new \Exception('应用已经存在');
+                    }
+
+                    if(!$post['template_sid']) {
+                        throw new \Exception('请选择模版');
+                    }
+                    $works_app_template_model = new model\WorksAppTemplateModel($this->service);
+                    $works_app_template_info = $works_app_template_model->worksAppTemplateInfo(['template_sid'=>$post['template_sid'],'status'=>1]);
+                    if (!$works_app_template_info || !$works_app_template_info['config']) {
+                        throw new \Exception('模版不存在');
+                    }
+                    $map['config'] = $works_app_template_info['config'];
+
+                    if ($post['template_name']) {
+                        $map['config']['template_name'] = $post['template_name'];
+                    }
+
+
+                    if (!empty($map['config'])) {
+                        $map['config'] = ng_mysql_json_safe_encode($map['config']);
+                    }
+
+
+                    $map['type_id'] = $post['type_id'];
+                    $map['company_id'] = $req->company_id;
+                    $map['work_id'] = $request_work_id;
+
+
+                    if ($post['thumb']) {
+                        $map['icon'] = $post['thumb'];
+                    }
+
+
+                    if(!$post['config_value']) {
+                        throw new \Exception('请填写配置');
+                    }
+                    $config_value = preg_replace_callback(
+                        "/post_c\[(.+?)\]/is",
+                        function ($matches) {
+                            return strtolower($matches[1]);
+                        },
+                        $post['config_value']
+                    );
+                    $config_value = json_decode($config_value,true);
+                    $map['project_config'] = [];
+                    if (is_array($config_value)) {
+                        foreach($config_value as $val) {
+                            $map['project_config'][$val['name']] = $val['val'];
+                        }
+                    }
+                    if (isset($map['project_config']['cert_file'])) {
+                        $cert_file_info = pathinfo($map['project_config']['cert_file']);
+                        if (!in_array(strtolower($cert_file_info['extension']),['p12','pem'])) {
+                            unset($map['project_config']['cert_file']);
+                        } else {
+                            if(preg_match('/^\/tmp\//is',$map['project_config']['cert_file'])) {
+                                $origin_file = './data'.$map['project_config']['cert_file'];
+                                if (!file_exists($origin_file)) {
+                                    throw new \Exception('证书文件不存在');
+                                }
+
+                                //移动
+                                $config_model = new model\ConfigModel($this->service);
+                                $cert_global = 'cert_global';
+                                $cert_global_config = $config_model->getConfig($cert_global);
+                                if (!$cert_global_config || !$cert_global_config['cert_path']) {
+                                    throw new \Exception('请设置证书安装路径');
+                                }
+                                $target_file = str_replace('/tmp/','/'.$req->company_id.'/',$map['project_config']['cert_file']);
+
+                                $target_file = '..'.$cert_global_config['cert_path'].''.$target_file;
+                                $target_info = pathinfo($target_file);
+
+                                if (!is_dir($target_info['dirname'].'/')) {
+                                    mkdir($target_info['dirname'].'/',0755,true);
+                                }
+
+                                @copy($origin_file,$target_file);
+                                unlink($origin_file);
+                                $map['project_config']['cert_file'] = $target_file;
+
+                            } else {
+                                //编辑时候有用，不处理
+                            }
+                        }
+
+                    }
+                    if (!empty($map['project_config'])) {
+                        $map['project_config'] = ng_mysql_json_safe_encode($map['project_config']);
+                    } else {
+                        throw new \Exception('配置不正确');
+                    }
+
+                    $map['account_id'] = $this->sessions['manager_uid'];
+                    $map['account_nickname'] = $this->sessions['manager_name'];
+                    $map['status'] = $post['status'];
+                    $map['mtime'] = time();
+
+
+                    $flag = $work_model->saveWorksApp($where,$map);
+                    if (!$flag) {
+                        throw new \Exception('保存错误');
+                    } else {
+                        $data = [
+                            'info'=>'保存成功',
+                        ];
+                        $status = true;
+                        $mess = '成功';
+                    }
+
+                }
+
+            }
+        }catch (\Exception $e) {
+            $error = $e->getMessage();
+            $data = [
+                'error'=>$error,
+                'info'=>$error,
+
+            ];
+            $status = false;
+            $mess = '失败';
+        }
+
+        if($req->request_method == 'POST') {
+            //json返回
+            return $this->render($status,$mess,$data);
+        } else {
+            return $this->render($status,$mess,$data,'template','work/worksapp_edit');
+        }
+    }
+
+    /**
+     * @name 复制应用
+     * @priv ask
+     */
+    public function work_app_copyAction(RequestHelper $req, array $preData)
+    {
+        try{
+            $request_work_id = $req->query_datas['work_id'];
+            $request_app_sid = $req->query_datas['app_sid'];
+            if(!$request_work_id || !$request_app_sid) {
+                throw new \Exception('应用id错误');
+            }
+            $work_model = new model\WorksAppModel($this->service);
+            //检查是否超过限制了
+            $current_count = $work_model->worksAppCount(['company_id'=>$req->company_id,'work_id'=>$request_work_id]);
+            $hook_model = new model\HookModel($this->service);
+            $hook_model->assert_max_app_limit($req->company_id,$current_count);
+
+            $where = [
+                'company_id'=>$req->company_id,
+                'work_id'=>$request_work_id,
+                'app_sid'=>$request_app_sid,
+            ];
+            $worksApp_info = $work_model->worksAppInfo($where);
+            if (!$worksApp_info) {
+                throw new \Exception('应用不存在');
+            }
+            $map = $worksApp_info;
+            unset($map['id']);unset($map['app_sid']);
+            $map['ctime'] = $map['mtime'] = time();
+            // 重新名
+            while(true) {
+                //无限循环生成应用名称，确保应用名称不重复
+                $suffix = ng_copy_name_gen();
+                $new_name = $map['name'].'_'.$suffix;
+                $check_name_where = [
+                    'company_id'=>$req->company_id,
+                    'work_id'=>$request_work_id,
+                    'name'=>$new_name,
+                ];
+                $check_exist = $work_model->worksAppCount($check_name_where);
+                if (!$check_exist)break;
+            }
+            $map['name'] = $new_name;
+            if (!empty($map['config'])) {
+                $map['config'] = ng_mysql_json_safe_encode($map['config']);
+            }
+            if (!empty($map['project_config'])) {
+                $map['project_config'] = ng_mysql_json_safe_encode($map['project_config']);
+            }
+
+            $flag = $work_model->addWorksApp($map);
+
+            if (!$flag) {
+                throw new \Exception('复制失败');
+            }
+            $status = true;
+            $mess = '复制成功';
+            $data = [
+                'status'=>$status,
+                'info'=>$mess,
+            ];
+
+        }catch (\Exception $e) {
+            $error = $e->getMessage();
+            $status = false;
+            $mess = '失败';
+            $data = [
+                'error'=>$error,
+                'info'=>$error,
+                'status'=>$status,
+            ];
+
+        }
+        if($req->request_method == 'GET') {
+            //json返回
+            return $this->render($status, $mess, $data);
+        }
+    }
     /**
      * @name 分类设置
      * @priv allow

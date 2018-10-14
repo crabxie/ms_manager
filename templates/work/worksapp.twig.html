@@ -75,14 +75,9 @@
             <td>{{ val.ctime|date('Y-m-d H:i:s') }}</td>
             <td>
                 <a href="{{val.edit_url}}">编辑</a>
-                | <a href="{{val.app_url}}" >应用 </a>
-                {% if val.is_self %}
+                | <a href="{{val.copy_url}}" class="js-ajax-dialog-btn" data-msg="您确定复制该应用吗？">复制</a>
                 | <a href="{{val.delete_url}}" class="js-ajax-dialog-btn" data-msg="确定删除吗？">删除</a>
-                | <a href="{{val.add_admin_url}}" >添加管理员({{val.admin_count}})</a>
-                {% endif %}
-                {% if val.is_admin %}
-                | <a href="{{val.add_app_url}}" >添加应用</a>
-                {% endif %}
+
             </td>
         </tr>
         {% endfor %}
