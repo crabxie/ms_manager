@@ -1532,14 +1532,85 @@ class Work extends PermissionBase
         try {
             $request_work_id = $req->query_datas['work_id'];
             $request_app_sid = $req->query_datas['app_sid'];
+            if (!$request_work_id || !$request_app_sid) {
+                throw new \Exception('参数不正确');
+            }
             $ngeditor_root = dirname(dirname(__FILE__)).'/ngeditor/';
             $ngeditor_core_js_file = 'ng_editor.js';
             $ngeditor_core_index_file = 'index.html';
             if(!is_dir($ngeditor_root) || !file_exists($ngeditor_root.$ngeditor_core_js_file)) {
                 throw new  \Exception('编辑器未安装');
             }
-            require $ngeditor_root.$ngeditor_core_index_file;
+            $sessions = $this->sessions;
 
+            $where = [
+                'work_id'=>$request_work_id,
+                'company_id'=>$req->company_id,
+            ];
+            $work_model = new model\WorkModel($this->service);
+            $work_app_model = new model\WorksAppModel($this->service);
+
+            $work_info = $work_model->worksInfo($where);
+            if (!$work_info) {
+                throw new  \Exception('业务不存在');
+            }
+            if ($work_info['status']!=1) {
+                throw new  \Exception('业务禁用');
+            }
+            $work_name = $work_info['name'];
+            $where = [
+                'work_id'=>$request_work_id,
+                'company_id'=>$req->company_id,
+                'app_sid'=>$request_app_sid,
+            ];
+            $work_app_info = $work_app_model->worksAppInfo($where);
+
+            if (!$work_app_info) {
+                throw new  \Exception('业务不存在');
+            }
+            if ($work_app_info['status']!=1) {
+                throw new  \Exception('业务禁用');
+            }
+
+            $app_name = $work_app_info['name'];
+            if ($sessions['manager_avatar']) {
+                $avatar = '/wxapp/data/'.$sessions['manager_avatar'];
+            }
+
+            $path = [
+                'mark' => 'api',
+                'bid'  => $req->company_id,
+
+            ];
+            $query = [];
+            $api_host = urlGen($req,$path,$query,true);
+
+            $token = substr(md5($request_work_id.$request_app_sid.$req->company_id),8,16);
+            $new_session = $this->service->getSession();
+            $new_session->set('token',$token);
+
+            $data = [
+                'work_id'=>$request_work_id,
+                'app_sid'=>$request_app_sid,
+                'company_id'=>$req->company_id,
+                'work_name'=>$work_name,
+                'app_name'=>$app_name,
+                'account_uid'=>$sessions['manager_uid'],
+                'account_name'=>$sessions['manager_name'],
+                'account_avatar'=>$avatar,
+                'account_user'=>$sessions['manager_user'],
+                'api_host'=>$api_host,
+                'flatform'=>'插件管理系统',
+                'token'=>$token,
+
+            ];
+
+            $contents = file_get_contents($ngeditor_root.$ngeditor_core_index_file);
+            $contents = preg_replace_callback("/{{(.+?)}}/is",function($matches)use ($data) {
+                $key = strtolower($matches[1]);
+                return $data[$key];
+            },$contents);
+            echo $contents;
 
         } catch (\Exception $e) {
             $error = $e->getMessage();
