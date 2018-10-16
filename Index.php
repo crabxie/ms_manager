@@ -131,6 +131,7 @@ class Index extends PermissionBase
         $material_model = new model\AssetsModel($this->service);
         $hook_model = new  model\HookModel($this->service);
         $works_app_model = new model\WorksAppModel($this->service);
+        $plugins_model = new model\PluginsModel($this->service);
 
         $where = [
             'company_id'=>$req->company_id,
@@ -140,6 +141,11 @@ class Index extends PermissionBase
         $frontend_user_count = $frontend_model->userCount($where);
         $material_count = $material_model->assetsCount($where);
         $max_work_count = $hook_model->get_max_work_limit($where['company_id']);
+
+        $plugin_where = [
+            'bussine_id'=>$req->company_id,
+        ];
+        $plugin_count =$plugins_model->pluginsRelCount($plugin_where);
 
 
         $byme_where  = array_merge($where,['account_id'=>$this->sessions['manager_uid']]);
@@ -171,7 +177,7 @@ class Index extends PermissionBase
                 ['name'=>'今日新增素材数','value'=>$material_today_count],
             ],
             '插件'=>[
-                ['name'=>'插件总数','value'=>0],
+                ['name'=>'插件总数','value'=>$plugin_count],
             ],
             'PV/UV'=>[
                 ['name'=>'总PV','value'=>0],
